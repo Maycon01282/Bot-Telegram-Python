@@ -1,23 +1,16 @@
-from config import engine
-from Model.BaseModel import Base
-from Model.Client import Client
-from Model.Category import Category
-from Model.Product import Product
+import os
+import django
+from django.core.management import call_command
 
-# Teste a conexão
-try:
-    connection = engine.connect()
-    print("Conexão bem-sucedida!")
-    connection.close()
-except Exception as e:
-    print(f"Erro de conexão: {e}")
+# Configura o Django
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "adminpanel.settings")  # Ajuste conforme o nome do seu projeto
+django.setup()
 
-# Cria as tabelas no banco de dados
-try:
-    Base.metadata.create_all(bind=engine)
-    print("Tabelas criadas no banco de dados!")
-except Exception as e:
-    print(f"Erro ao criar tabelas: {e}")
+# Executa as migrações para criar as tabelas no banco de dados
+call_command('makemigrations')
+call_command('migrate')
 
-if __name__ == "__main__":
-    print("Script executado!")
+# Importando o ORM e os modelos
+from adminpanelproject.models import *  # Certifique-se de que todos os modelos estão corretamente importados
+
+# Agora você pode usar os modelos do Django para interagir com o banco de dados
