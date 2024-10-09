@@ -1,0 +1,4 @@
+Django==5.1
+virtualenv==20.26.4
+SQLAlchemy==2.0.35
+mysql-connector-python==9.0.0
