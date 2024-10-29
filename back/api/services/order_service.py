@@ -29,3 +29,6 @@ def delete_order(order_id: int) -> None:
 
 def list_orders_by_client(client: str) -> list:
     return list(Order.objects.filter(client=client))
+
+def list_orders() -> list:
+    return list(Order.objects.all())

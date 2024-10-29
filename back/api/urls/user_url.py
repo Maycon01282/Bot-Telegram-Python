@@ -1,17 +1,16 @@
 from django.urls import path
 from api.views.user_view import (
-    user_list_view,
-    user_detail_view,
-    user_create_view,
-    user_update_view,
-    user_delete_view
+    create_user_view,
+    update_user_view,
+    delete_user_view,
+    get_user_view,
+    list_users_view
 )
 
 urlpatterns = [
-    path('users/', user_list_view, name='user_list'),
-    path('users/<int:user_id>/', user_detail_view, name='user_detail_by_id'),
-    path('users/email/<str:email>/', user_detail_view, name='user_detail_by_email'),
-    path('users/create/', user_create_view, name='user_create'),
-    path('users/update/<int:user_id>/', user_update_view, name='user_update'),
-    path('users/delete/<int:user_id>/', user_delete_view, name='user_delete'),
+    path('users/', list_users_view, name='list_users'),
+    path('users/<int:user_id>/', get_user_view, name='get_user'),
+    path('users/create/', create_user_view, name='create_user'),
+    path('users/<int:user_id>/update/', update_user_view, name='update_user'),
+    path('users/<int:user_id>/delete/', delete_user_view, name='delete_user'),
 ]

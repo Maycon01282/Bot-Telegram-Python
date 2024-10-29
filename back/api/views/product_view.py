@@ -1,7 +1,7 @@
 from django.http import JsonResponse, HttpResponseNotFound, HttpResponseBadRequest
 from django.views.decorators.http import require_http_methods
 from api.models.product_model import Product
-from api.services import list_products, get_product_by_id, create_product, update_product, delete_product
+from api.services.product_service import list_products, get_product_by_id, create_product, update_product, delete_product
 import json
 
 @require_http_methods(["GET"])

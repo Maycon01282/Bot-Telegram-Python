@@ -1,9 +1,11 @@
-from api.models.order_item_model import OrderItem, Order, Item
+from api.models.order_item_model import OrderItem
+from api.models.order_model import Order
+from api.models.product_model import Product  # Import the Product class
 
-def create_order_item(order_id: int, item_id: int, quantity: int) -> OrderItem:
+def create_order_item(order_id: int, product_id: int, quantity: int) -> OrderItem:
     order = Order.objects.get(id=order_id)
-    item = Item.objects.get(id=item_id)
-    order_item = OrderItem(order=order, item=item, quantity=quantity)
+    product = Product.objects.get(id=product_id)
+    order_item = OrderItem(order=order, product=product, quantity=quantity)
     order_item.save()
     return order_item
 
@@ -22,5 +24,4 @@ def delete_order_item(order_item_id: int) -> None:
     order_item.delete()
 
 def list_order_items_by_order(order_id: int) -> list:
-    order = Order.objects.get(id=order_id)
-    return list(OrderItem.objects.filter(order=order))
+    return list(OrderItem.objects.filter(order_id=order_id))

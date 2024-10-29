@@ -16,6 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path,include
+from api.views.auth_view import login_view
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -25,5 +26,6 @@ urlpatterns = [
     path('order/', include('api.urls.order_url')),  # Inclua as URLs do aplicativo de pedidos
     path('order_item/', include('api.urls.order_item_url')),  # Inclua as URLs do aplicativo de itens de pedidos
     path('products/', include('api.urls.product_url')),  # Inclua as URLs do aplicativo de produtos
-    path('users/', include('api.urls.user_url'))  # Inclua as URLs do aplicativo de usuários
+    path('users/', include('api.urls.user_url')),  # Inclua as URLs do aplicativo de usuários
+    path('login/', login_view, name='login'),
 ]
