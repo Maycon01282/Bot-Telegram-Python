@@ -1,8 +1,9 @@
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.core.exceptions import ObjectDoesNotExist
-from ..models.message_model import Message
+from api.models.message_model import Message
 from api.services.message_service import create_message, get_message_by_id, update_message, delete_message
+import json
 
 @require_http_methods(["POST"])
 def create_message_view(request):

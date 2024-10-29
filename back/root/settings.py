@@ -11,10 +11,14 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+from dotenv import load_dotenv
+import os
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
@@ -26,7 +30,6 @@ SECRET_KEY = 'django-insecure-8a!g0vd)2hxt(%xh-0ncl^#8vuqx%)ee__1lm9ys_z)!0ir7xy
 DEBUG = True
 
 ALLOWED_HOSTS = []
-
 
 # Application definition
 
@@ -70,26 +73,17 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'root.wsgi.application'
-from dotenv import load_dotenv
-import os
-load_dotenv()
-
-DB_USER = os.getenv("DB_USER")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
-DB_HOST = os.getenv("DB_HOST")
-DB_NAME = os.getenv("DB_NAME")
-DB_PORT = os.getenv("DB_PORT")
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',  # Use 'mysql' for MySQL
-        'NAME': DB_NAME,           # The name of your database
-        'USER': DB_USER ,                 # Your MySQL username
-        'PASSWORD': DB_PASSWORD,             # Your MySQL password
-        'HOST': DB_HOST,                     # Set to 'localhost' or your database host
-        'PORT': DB_PORT,                          # Default MySQL port
+        'NAME': os.getenv("DB_NAME"),           # The name of your database
+        'USER': os.getenv("DB_USER"),           # Your MySQL username
+        'PASSWORD': os.getenv("DB_PASSWORD"),   # Your MySQL password
+        'HOST': os.getenv("DB_HOST"),           # Set to 'localhost' or your database host
+        'PORT': os.getenv("DB_PORT"),           # Default MySQL port
     }
 }
 
@@ -111,7 +105,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
@@ -123,7 +116,6 @@ USE_I18N = True
 
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
@@ -133,3 +125,10 @@ STATIC_URL = '/static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Custom user model
+AUTH_USER_MODEL = 'api.User'
+
+# Login and logout redirects
+LOGIN_REDIRECT_URL = 'home'
+LOGOUT_REDIRECT_URL = 'login'

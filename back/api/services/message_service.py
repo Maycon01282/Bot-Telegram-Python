@@ -1,5 +1,5 @@
 from django.db import models
-from ..models import Message
+from api.models.message_model import Message
 
 def create_message(name: str, description: str, text: str) -> Message:
     message = Message(name=name, description=description, text=text)
