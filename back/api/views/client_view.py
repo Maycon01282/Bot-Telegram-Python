@@ -1,6 +1,6 @@
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
-from api.services import list_clients, get_client_by_id, create_client, update_client, delete_client
+from api.services.client_service import list_clients, get_client_by_id, create_client, update_client, delete_client
 import json
 
 @require_http_methods(["GET"])

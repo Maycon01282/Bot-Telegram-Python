@@ -1,5 +1,5 @@
 from django.urls import path
-from api.views import create_message_view, get_message_view, update_message_view, delete_message_view
+from api.views.message_view import create_message_view, get_message_view, update_message_view, delete_message_view
 
 urlpatterns = [
     path('message/', create_message_view, name='create_message'),
