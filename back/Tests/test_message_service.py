@@ -1,6 +1,11 @@
 from django.test import TestCase
 from api.models.message_model import Message
 from api.services.message_service import create_message, get_message_by_id, update_message
+from api.services.message_service import create_message, get_message_by_id, update_message, delete_message
+
+class MessageServiceTestCase(TestCase):
+    def setUp(self):
+        self.message = create_message(name='Test Message', description='Test Description', text='Test Text')
 
 class MessageServiceTestCase(TestCase):
     def setUp(self):
@@ -26,3 +31,8 @@ class MessageServiceTestCase(TestCase):
         self.assertEqual(updated_message.name, 'Updated Message')
         self.assertEqual(updated_message.description, 'Updated Description')
         self.assertEqual(updated_message.text, 'Updated Text')
+
+        def test_delete_message(self):
+            delete_message(self.message.id)
+            with self.assertRaises(Message.DoesNotExist):
+                get_message_by_id(self.message.id)

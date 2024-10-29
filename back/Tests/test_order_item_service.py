@@ -1,7 +1,5 @@
 from django.test import TestCase
-from api.models.order_item_model import OrderItem
-from api.models.order_model import Order
-from api.models.product_model import Product
+from api.models import OrderItem, Order, Product
 from api.services.order_item_service import create_order_item, get_order_item_by_id, update_order_item, delete_order_item, list_order_items_by_order
 
 class OrderItemServiceTestCase(TestCase):
