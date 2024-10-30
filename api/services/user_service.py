@@ -19,8 +19,8 @@ class UserService:
                 user.set_password(data['password'])
             user.save()
             return {"id": user.id, "name": user.name, "email": user.email}
-        except ObjectDoesNotExist:
-            return None
+        except User.DoesNotExist:
+            raise User.DoesNotExist(f"User with id {user_id} does not exist")
 
     def delete_user(self, user_id: int) -> bool:
         try:
