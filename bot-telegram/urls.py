@@ -6,6 +6,7 @@ from admin_panel.views import login,home
 from api.views import login_view  # Import the login_view function
 
 urlpatterns = [
+    path('', login, name="index"),
     path('admin/', admin.site.urls),
     path('categories/', include('api.urls.category_url')),  # Inclua as URLs do aplicativo de categorias
     path('clients/', include('api.urls.client_url')),  # Inclua as URLs do aplicativo de clientes

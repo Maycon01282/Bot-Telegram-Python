@@ -29,6 +29,8 @@ SECRET_KEY = 'django-insecure-8a!g0vd)2hxt(%xh-0ncl^#8vuqx%)ee__1lm9ys_z)!0ir7xy
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+YOUR_BOT_TOKEN = '7347774913:AAHD1yjTgZiGF6wnfm-4acfVwh6fnA3szp8'
+
 ALLOWED_HOSTS = []
 
 # Application definition
