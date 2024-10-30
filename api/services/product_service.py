@@ -1,10 +1,26 @@
 from api.models.product_model import Product
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.core.exceptions import ObjectDoesNotExist
 
-def list_products():
+def list_products(page: int = 1, page_size: int = 10) -> dict:
     products = Product.objects.all()
-    return [{"id": product.id, "category": product.category, "photo_url": product.photo_url, "name": product.name, "description": product.description, "price": product.price} for product in products]
-
+    paginator = Paginator(products, page_size)
+    
+    try:
+        products_page = paginator.page(page)
+    except PageNotAnInteger:
+        products_page = paginator.page(1)
+    except EmptyPage:
+        products_page = paginator.page(paginator.num_pages)
+    
+    return {
+        "products": [{"id": product.id, "category": product.category, "photo_url": product.photo_url, "name": product.name, "description": product.description, "price": product.price} for product in products_page],
+        "total_pages": paginator.num_pages,
+        "current_page": products_page.number,
+        "has_next": products_page.has_next(),
+        "has_previous": products_page.has_previous()
+    }
+    
 def get_product_by_id(product_id):
     try:
         product = Product.objects.get(id=product_id)

@@ -35,5 +35,8 @@ def get_user_view(request, user_id):
 
 @require_http_methods(["GET"])
 def list_users_view(request):
-    users_list = user_service.list_users()
+    page = int(request.GET.get('page', 1))
+    page_size = int(request.GET.get('page_size', 10))
+    
+    users_list = user_service.list_users(page, page_size)
     return JsonResponse(users_list, safe=False)

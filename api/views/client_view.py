@@ -5,7 +5,10 @@ import json
 
 @require_http_methods(["GET"])
 def list_clients_view(request):
-    clients_list = list_clients()
+    page = int(request.GET.get('page', 1))
+    page_size = int(request.GET.get('page_size', 10))
+    
+    clients_list = list_clients(page, page_size)
     return JsonResponse(clients_list, safe=False)
 
 @require_http_methods(["GET"])

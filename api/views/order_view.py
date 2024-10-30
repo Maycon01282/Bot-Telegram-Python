@@ -1,12 +1,15 @@
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
-from api.services.order_service import list_orders, get_order_by_id, create_order, update_order, delete_order, list_orders_by_client
+from api.services.order_service import list_orders, get_order_by_id, create_order, update_order, delete_order
 from api.models.order_model import Order
 import json
 
 @require_http_methods(["GET"])
 def list_orders_view(request):
-    orders_list = list_orders()
+    page = int(request.GET.get('page', 1))
+    page_size = int(request.GET.get('page_size', 10))
+    
+    orders_list = list_orders(page, page_size)
     return JsonResponse(orders_list, safe=False)
 
 @require_http_methods(["GET"])
@@ -24,8 +27,6 @@ def get_order_view(request, order_id):
 @require_http_methods(["POST"])
 def create_order_view(request):
     data = json.loads(request.body)
-    if 'status' in data and data['status'] not in Order.Status.values:
-        return JsonResponse({'error': 'Invalid status value'}, status=400)
     order_data = create_order(data['client'], data['status'], data['amount'])
     return JsonResponse({
         'id': order_data.id,
@@ -55,9 +56,3 @@ def delete_order_view(request, order_id):
     if success:
         return JsonResponse({"message": "Order deleted successfully"}, status=204)
     return JsonResponse({'error': 'Order not found'}, status=404)
-
-@require_http_methods(["GET"])
-def list_orders_by_client_view(request):
-    client = request.GET.get('client')
-    orders_list = list_orders_by_client(client)
-    return JsonResponse(orders_list, safe=False)

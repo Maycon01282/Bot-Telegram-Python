@@ -6,7 +6,10 @@ import json
 
 @require_http_methods(["GET"])
 def product_list_view(request):
-    products = list_products()
+    page = int(request.GET.get('page', 1))
+    page_size = int(request.GET.get('page_size', 10))
+    
+    products = list_products(page, page_size)
     return JsonResponse(products, safe=False)
 
 @require_http_methods(["GET"])
@@ -22,9 +25,16 @@ def product_create_view(request):
     try:
         data = json.loads(request.body)
         product = create_product(data)
-        return JsonResponse(product, status=201)
-    except (KeyError, json.JSONDecodeError):
-        return HttpResponseBadRequest("Invalid data")
+        return JsonResponse({
+            'id': product.id,
+            'category': product.category,
+            'photo_url': product.photo_url,
+            'name': product.name,
+            'description': product.description,
+            'price': product.price
+        }, status=201)
+    except KeyError as e:
+        return HttpResponseBadRequest(f"Missing field: {e}")
 
 @require_http_methods(["PUT"])
 def product_update_view(request, product_id):

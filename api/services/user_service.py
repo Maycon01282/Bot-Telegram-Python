@@ -1,4 +1,5 @@
 from django.core.exceptions import ObjectDoesNotExist
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from api.models.user_model import User
 
 class UserService:
@@ -19,24 +20,24 @@ class UserService:
                 user.set_password(data['password'])
             user.save()
             return {"id": user.id, "name": user.name, "email": user.email}
-        except User.DoesNotExist:
-            raise User.DoesNotExist(f"User with id {user_id} does not exist")
-
-    def delete_user(self, user_id: int) -> bool:
-        try:
-            user = User.objects.get(id=user_id)
-            user.delete()
-            return True
-        except ObjectDoesNotExist:
-            return False
-
-    def get_user_by_id(self, user_id: int):
-        try:
-            user = User.objects.get(id=user_id)
-            return {"id": user.id, "name": user.name, "email": user.email}
         except ObjectDoesNotExist:
             return None
 
-    def list_users(self):
+    def list_users(self, page: int = 1, page_size: int = 10) -> dict:
         users = User.objects.all()
-        return [{"id": user.id, "name": user.name, "email": user.email} for user in users]
+        paginator = Paginator(users, page_size)
+        
+        try:
+            users_page = paginator.page(page)
+        except PageNotAnInteger:
+            users_page = paginator.page(1)
+        except EmptyPage:
+            users_page = paginator.page(paginator.num_pages)
+        
+        return {
+            "users": [{"id": user.id, "name": user.name, "email": user.email} for user in users_page],
+            "total_pages": paginator.num_pages,
+            "current_page": users_page.number,
+            "has_next": users_page.has_next(),
+            "has_previous": users_page.has_previous()
+        }

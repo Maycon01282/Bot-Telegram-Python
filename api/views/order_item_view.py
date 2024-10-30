@@ -20,19 +20,22 @@ def get_order_item_view(request, order_item_id):
     order_item = get_order_item_by_id(order_item_id)
     return JsonResponse({'id': order_item.id, 'order_id': order_item.order.id, 'item_id': order_item.item.id, 'quantity': order_item.quantity})
 
+@require_http_methods(["GET"])
+def list_order_items_view(request, order_id):
+    page = int(request.GET.get('page', 1))
+    page_size = int(request.GET.get('page_size', 10))
+    
+    order_items_data = list_order_items_by_order(order_id, page, page_size)
+    return JsonResponse(order_items_data, safe=False)
+
 @require_http_methods(["PUT"])
 def update_order_item_view(request, order_item_id):
-    data = request.PUT
-    order_item = update_order_item(order_item_id, data.get('quantity'))
+    data = json.loads(request.body)
+    quantity = data.get('quantity')
+    order_item = update_order_item(order_item_id, quantity)
     return JsonResponse({'id': order_item.id, 'order_id': order_item.order.id, 'item_id': order_item.item.id, 'quantity': order_item.quantity})
 
 @require_http_methods(["DELETE"])
 def delete_order_item_view(request, order_item_id):
     delete_order_item(order_item_id)
-    return JsonResponse({'status': 'deleted'})
-
-@require_http_methods(["GET"])
-def list_order_items_by_order_view(request, order_id):
-    order_items = list_order_items_by_order(order_id)
-    response_data = [{'id': oi.id, 'order_id': oi.order.id, 'item_id': oi.item.id, 'quantity': oi.quantity} for oi in order_items]
-    return JsonResponse(response_data, safe=False)
+    return JsonResponse({'message': 'Order item deleted successfully'})
