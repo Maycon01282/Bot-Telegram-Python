@@ -1,10 +1,9 @@
 # api/urls/category_urls.py
 from django.urls import path
-from api.views.category_view import list_categories, get_category_by_id, create_category, update_category, delete_category
-from admin_panel.views import category
+from api.views.category_view import list_categories, get_category_by_id, create_category, update_category, delete_category, categories
 
 urlpatterns = [
-    path('', category, name='category'),
+    path('', categories, name='categories'),
     path('', list_categories, name='list_categories'),  # URL para listar categorias
     path('<int:category_id>/', get_category_by_id, name='get_category_by_id'),
     path('create/', create_category, name='create_category'),

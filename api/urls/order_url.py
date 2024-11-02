@@ -5,12 +5,13 @@ from api.views.order_view import (
     create_order_view,
     update_order_view,
     delete_order_view,
-    list_orders_by_client_view
+    list_orders_by_client_view,
+    orders
 )
-from admin_panel.views import (orders)
 
 urlpatterns = [
-    path('', orders, name='orders'),
+    path('', orders, name="orders"),
+    path('', list_orders_view, name="list_orders"),
     path('order/create/', create_order_view, name='create_order'),
     path('<int:order_id>/', get_order_view, name='get_order_by_id'),
     path('update/<int:order_id>/', update_order_view, name='update_order'),

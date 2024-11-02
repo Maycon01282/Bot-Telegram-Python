@@ -1,6 +1,5 @@
 from django.urls import path
-from api.views.client_view import list_clients_view, get_client_view, create_client_view, update_client_view, delete_client_view
-from admin_panel.views import clients
+from api.views.client_view import list_clients_view, get_client_view, create_client_view, update_client_view, delete_client_view, clients
 
 urlpatterns = [
     path('', clients, name='clients'),

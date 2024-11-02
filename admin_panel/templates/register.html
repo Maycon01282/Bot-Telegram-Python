@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block title %}Registrar{% endblock %}
+
+{% block content %} 
+<div class="col-md-4">
+    <h4>Criar uma conta</h4>
+    <form id="register-form" method="post" action="{% url 'create_user' %}">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="name">Nome:</label>
+            <input type="text" name="name" required class="form-control">
+        </div>
+        <div class="mb-3">
+            <label for="email">Email:</label>
+            <input type="email" name="email" required class="form-control">
+        </div>
+        <div class="mb-3">
+            <label for="password">Senha:</label>
+            <input type="password" name="password" required class="form-control">
+        </div>
+        <button class="btn btn-warning mt-3" type="submit">Registrar</button>
+    </form>
+</div>
+
+<script>
+document.getElementById('register-form').onsubmit = async function(event) {
+    event.preventDefault(); // Previne o envio normal do formulário
+
+    const formData = new FormData(this);
+    const data = {
+        name: formData.get('name'),
+        email: formData.get('email'),
+        password: formData.get('password')
+    };
+
+    const response = await fetch(this.action, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}' // Incluindo o token CSRF
+        },
+        body: JSON.stringify(data)
+    });
+    console.log(data);
+    
+    if (response.ok) {
+        const result = await response.json();
+        // Aqui você pode redirecionar ou informar o usuário sobre o sucesso
+        alert('Usuário registrado com sucesso!');
+    } else {
+        const error = await response.json();
+        alert('Erro ao registrar: ' + error.message);
+    }
+};
+</script>
+{% endblock %}

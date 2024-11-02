@@ -4,12 +4,14 @@ from api.views.user_view import (
     update_user_view,
     delete_user_view,
     get_user_view,
-    list_users_view
+    list_users_view,
+    register,
+    users
 )
-from admin_panel.views import (users)
 
 urlpatterns = [
     path('', users, name='users'),
+    path("register/", register, name='register'),
     path('users/', list_users_view, name='list_users'),
     path('users/<int:user_id>/', get_user_view, name='get_user'),
     path('users/create/', create_user_view, name='create_user'),

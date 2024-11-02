@@ -5,8 +5,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Panel</title>
-  {% load static %}
+  <link rel="stylesheet" href="{% static 'css/layout.css' %}">
   <link rel="stylesheet" href="{% static 'css/header.css' %}">
+  <link rel="stylesheet" href="{% static 'css/forms.css' %}">
+  <link rel="stylesheet" href="{% static 'css/buttons.css' %}">
+  <link rel="stylesheet" href="{% static 'css/popups.css' %}">}">
 </head>
 <body>
   <header>
@@ -14,16 +17,16 @@
     <nav>
       <ul>
         <li><a href="{% url 'clients' %}">Clients</a></li>
-        <li><a href="{% url 'category' %}">Categories</a></li>
+        <li><a href="{% url 'categories' %}">Categories</a></li>
         <li><a href="{% url 'products' %}">Products</a></li>
         <li><a href="{% url 'orders' %}">Orders</a></li>
         <li><a href="{% url 'users' %}">Users</a></li>
-        <li><a href="{% url 'home_html' %}">Home</a></li>
+        <li><a href="{% url 'home' %}">Home</a></li>
       </ul>
     </nav>
     <div class="user-info">
       <span>admin</span>
-      <button onclick="window.location.href='{% url 'index' %}'">Log out</button>
+      <button onclick="window.location.href='{% url 'login' %}'">Log out</button>
     </div>
   </header>
 </body>

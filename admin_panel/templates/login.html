@@ -1,25 +1,38 @@
+{% extends 'base.html' %}
+
+{% block title %}Authorization{% endblock %}
+
+{% block content %}
+
 {% load static %}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/layout.css' %}">
+    <link rel="stylesheet" href="{% static 'css/header.css' %}">
+    <link rel="stylesheet" href="{% static 'css/forms.css' %}">
+    <link rel="stylesheet" href="{% static 'css/buttons.css' %}">
+    <link rel="stylesheet" href="{% static 'css/popups.css' %}">
 </head>
 <body>
     <div class="container">
         <h1>Authorization</h1>
         
         {% if form.non_field_errors %}
-            <div class="error">{{ form.non_field_errors }}</div>
+            <div class="error-container">
+                <span class="error">{{ form.non_field_errors|safe }}</span>
+            </div>
         {% endif %}
         
         <form method="post">
             {% csrf_token %}
             <div>
                 <label for="username">Username:</label>
-                <input type="text" id="username" name="username" required>
+                <input type="text" name="username" required>
             </div>
             <div>
                 <label for="password">Password:</label>
@@ -30,3 +43,5 @@
     </div>
 </body>
 </html>
+
+{% endblock %}
