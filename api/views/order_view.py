@@ -8,7 +8,7 @@ from django.contrib.auth.decorators import login_required
 
 @login_required
 def orders(request):
-    return render(request, 'orders')
+    return render(request, 'main/orders/all.html')
 
 @require_http_methods(["GET"])
 def list_orders_view(request):

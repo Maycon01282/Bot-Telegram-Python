@@ -16,4 +16,8 @@ def login_view(request):
     else:
         form = AuthenticationForm()
 
-    return render(request, 'login.html', {'form': form, 'login_error': login_error})
+    return render(request, 'login.html', {
+    'form': form,
+    'login_error': login_error,
+    'isLoggedIn': request.user.is_authenticated,
+})
