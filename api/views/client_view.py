@@ -2,6 +2,12 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from api.services.client_service import list_clients, get_client_by_id, create_client, update_client, delete_client
 import json
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+
+@login_required
+def clients(request):
+    return render(request, 'clients.html')
 
 @require_http_methods(["GET"])
 def list_clients_view(request):

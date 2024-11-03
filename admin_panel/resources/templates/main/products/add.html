@@ -1,0 +1,70 @@
+{% extends 'common/home.html' %}
+{% load static %}
+
+{% block home %}
+  <h1>Product adding</h1>
+
+  {% include 'common/fileinput.html' with id='photo' photo='' %}
+  <link href="{% static 'css/bootstrap-select.css' %}" rel="stylesheet">
+  <script src="{% static 'js/bootstrap-select.js' %}"></script>
+
+  <form method="post" action="{% url 'products_create' %}" enctype="multipart/form-data">
+    {% csrf_token %}
+    <div class="form-group row">
+      <label class="col-sm-2">Photo:</label>
+      <div class="col-sm-10">
+        <input class="form-control" id="photo" type="file" name="photo" required>
+      </div>
+    </div>
+
+    <div class="form-group row">
+      <label class="col-sm-2">Name:</label>
+      <div class="col-sm-10">
+        <input class="form-control" name="name" value="{{ product.name|default:'' }}">
+        {% if nameError %}
+          <div class="text-warning">{{ nameError }}</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="form-group row">
+      <label class="col-sm-2">Description:</label>
+      <div class="col-sm-10">
+        <textarea class="form-control" name="description" rows="4">{{ product.description|default:'' }}</textarea>
+        {% if descriptionError %}
+          <div class="text-warning">{{ descriptionError }}</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="form-group row">
+      <label class="col-sm-2">Category:</label>
+      <div class="col-sm-10">
+        <select class="form-control selectpicker" name="category" data-live-search="true" data-size="4">
+          {% for category in categories %}
+            <option value="{{ category.id }}"
+                    {% if product and category == product.category %}selected{% endif %}>
+              {{ category.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group row">
+      <label class="col-sm-2">Price:</label>
+      <div class="col-sm-10">
+        <input class="form-control" type="number" name="price" value="{{ product.price|default:'' }}">
+        {% if priceError %}
+          <div class="text-warning">{{ priceError }}</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <button class="btn btn-success" type="submit">Create</button>
+  </form>
+
+  <form method="get" action="{% url 'products' %}">
+    <button class="btn btn-info" type="submit">Back</button>
+  </form>
+{% endblock %}

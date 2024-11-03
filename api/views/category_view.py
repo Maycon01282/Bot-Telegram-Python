@@ -4,6 +4,12 @@ from django.views.decorators.csrf import csrf_exempt
 from api.models.category_model import Category
 from django.core.exceptions import ObjectDoesNotExist
 import json
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+
+@login_required
+def categories(request):
+    return render(request, 'categories.html')
 
 @require_http_methods(["GET"])
 def list_categories(request):

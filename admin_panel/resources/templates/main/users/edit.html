@@ -1,0 +1,87 @@
+{% extends 'common/home.html' %}
+{% load static %}
+
+{% block home %}
+  <h1>User editing</h1>
+
+  {% if Error %}
+    <div class="alert alert-warning" role="alert">
+      <h4 class="alert-heading">Error</h4>
+      <hr>{{ Error }}
+    </div>
+  {% endif %}
+
+  {% if user %}
+    <form method="post" action="{% url 'users_update' %}">
+      {% csrf_token %}
+      <div class="form-group row">
+        <label class="col-sm-2">Id:</label>
+        <div class="col-sm-10">
+          <input class="form-control" type="number" name="id" value="{{ user.id }}" readonly>
+        </div>
+      </div>
+
+      <div class="form-group row">
+        <label class="col-sm-2">Name:</label>
+        <div class="col-sm-10">
+          <input class="form-control" name="name" value="{{ user.name|default:'' }}">
+          {% if nameError %}
+            <div class="text-warning">{{ nameError }}</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="form-group row">
+        <label class="col-sm-2">Username:</label>
+        <div class="col-sm-10">
+          <input class="form-control" name="username" value="{{ user.username|default:'' }}">
+          {% if usernameError %}
+            <div class="text-warning">{{ usernameError }}</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="form-group row">
+        <label class="col-sm-2">Password:</label>
+        <div class="col-sm-10">
+          <input class="form-control" name="password">
+          {% if passwordError %}
+            <div class="text-warning">{{ passwordError }}</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="form-group row">
+        <label class="col-sm-2">Role:</label>
+        <div class="col-sm-10">
+          <select class="form-control" name="role">
+            {% for role in user.role.values %}
+              <option value="{{ role.name }}"
+                      {% if user.role.name == role.name %}selected{% endif %}>
+                {{ role.value }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <button class="btn btn-success" type="submit">Update</button>
+    </form>
+
+    <form method="get" action="{% url 'users' %}">
+      <button class="btn btn-info" type="submit">Back</button>
+    </form>
+
+    <form method="post" action="{% url 'users_delete' %}">
+      {% csrf_token %}
+      <input type="hidden" name="id" value="{{ user.id }}">
+      <button class="btn btn-danger" type="submit">Delete</button>
+    </form>
+
+  {% else %}
+    <div class="alert alert-danger" role="alert">
+      <h4 class="alert-heading">Error</h4>
+      <hr>This user does not exist!
+    </div>
+  {% endif %}
+{% endblock %}
