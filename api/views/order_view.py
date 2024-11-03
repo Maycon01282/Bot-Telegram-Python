@@ -8,7 +8,14 @@ from django.contrib.auth.decorators import login_required
 
 @login_required
 def orders(request):
-    return render(request, 'main/orders/all.html')
+    # Obtenha todas as ordens do banco de dados
+    orders_list = Order.objects.all()
+    
+    # Renderize o template e passe a lista de ordens
+    return render(request, 'main/orders/all.html', {
+        'orders': orders_list,
+        'isLoggedIn': request.user.is_authenticated,
+    })
 
 @require_http_methods(["GET"])
 def list_orders_view(request):

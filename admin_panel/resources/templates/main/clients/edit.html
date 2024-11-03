@@ -1,11 +1,21 @@
 {% extends 'common/home.html' %}
 {% load static %}
 
-{% block home %}
+{% block content %}
   <h1>Client editing</h1>
+  
+  {% if messages %}
+  <div>
+    {% for message in messages %}
+      <div class="alert {% if message.tags %}alert-{{ message.tags }}{% else %}alert-info{% endif %}" role="alert">
+        {{ message }}
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
 
   {% if client %}
-    <form method="post" action="{% url 'clients_update' %}">
+    <form method="post" action="{% url 'update_client' client.id %}">
       {% csrf_token %}
       <div class="form-group row">
         <label class="col-sm-2">Id:</label>
@@ -65,8 +75,8 @@
         <label class="col-sm-2">Active:</label>
         <div class="col-sm-10">
           <select class="form-control" name="active">
-            <option value="true" {% if client.active %}selected{% endif %}>Yes</option>
-            <option value="false" {% if not client.active %}selected{% endif %}>No</option>
+            <option value="true" {% if client.is_active %}selected{% endif %}>Yes</option>
+            <option value="false" {% if not client.is_active %}selected{% endif %}>No</option>
           </select>
         </div>
       </div>
@@ -74,7 +84,7 @@
       <button class="btn btn-success" type="submit">Update</button>
     </form>
 
-    <form method="get" action="{% url 'orders' %}">
+    <form method="get" action="{% url 'clients' %}">
       <button class="btn btn-info" type="submit">Back</button>
     </form>
 

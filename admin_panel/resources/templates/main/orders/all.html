@@ -6,6 +6,7 @@
 {% block head %}
   {{ block.super }}
   <link rel="stylesheet" href="{% static 'css/dataTables.bootstrap.css' %}">
+  <link rel="stylesheet" href="{% static 'css/custom.css' %}">
   <script src="{% static 'js/jquery.dataTables.js' %}"></script>
   <script src="{% static 'js/dataTables.responsive.js' %}"></script>
   <script src="{% static 'js/dataTables.bootstrap.js' %}"></script>
@@ -28,12 +29,12 @@
     {% for order in orders %}
       <tr>
         <td>{{ order.id }}</td>
-        <td>{{ order.client.name|default:'' }} (<a target="_blank" href="{% url 'clients_edit' order.client.id %}">view</a>)</td>
+        <td>{{ order.client.name|default:'' }} (<a target="_blank" href="{% url 'list_orders_by_client' order.client.id %}">view</a>)</td>
         <td>{{ order.createdDate|date:"d.m.Y H:i" }}</td>
         <td>{{ order.status.value }}</td>
         <td>{{ order.amount }} $</td>
         <td>
-          <a class="btn btn-xs btn-info" href="{% url 'orders_edit' order.id %}">
+          <a class="btn btn-xs btn-info" href="{% url 'update_order' order.id %}">
             <i class="fa fa-pencil" aria-hidden="true"></i>
           </a>
         </td>
