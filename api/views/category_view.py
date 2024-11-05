@@ -6,10 +6,18 @@ from django.core.exceptions import ObjectDoesNotExist
 import json
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
+from api.models.user_model import User
+from api.services.user_service import UserService
 
 @login_required
 def categories(request):
-    return render(request, 'categories.html')
+    user_service = UserService()
+    categories_list = Category.objects.all()
+    user_data = user_service.get_user_by_id(request.user.id)
+    return render(request, 'main/categories/all.html', {
+        'categories': categories_list,
+        'isLoggedIn': request.user.is_authenticated,
+    })
 
 @require_http_methods(["GET"])
 def list_categories(request):

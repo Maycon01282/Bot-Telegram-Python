@@ -1,14 +1,20 @@
 {% extends 'common/home.html' %}
 {% load static %}
 
-{% block home %}
+{% block content %}
   <h1>Product adding</h1>
 
   {% include 'common/fileinput.html' with id='photo' photo='' %}
   <link href="{% static 'css/bootstrap-select.css' %}" rel="stylesheet">
   <script src="{% static 'js/bootstrap-select.js' %}"></script>
 
-  <form method="post" action="{% url 'products_create' %}" enctype="multipart/form-data">
+  {% if category_error %}
+  <div class="alert alert-warning" role="alert">
+    {{ category_error }}
+  </div>
+{% endif %}
+
+  <form method="post" action="{% url 'product-create' %}" enctype="multipart/form-data">
     {% csrf_token %}
     <div class="form-group row">
       <label class="col-sm-2">Photo:</label>

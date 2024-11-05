@@ -1,8 +1,10 @@
 {% extends 'common/home.html' %}
 {% load static %}
 
-{% block home %}
+{% block content %}
   <h1>Messages list</h1>
+
+  {% include 'common/table.html' with name="messages" %}  
 
   {% block table %}
   <table id="messages" class="table table-striped table-bordered" cellspacing="0" width="100%">

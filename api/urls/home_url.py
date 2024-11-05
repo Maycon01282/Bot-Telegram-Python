@@ -1,6 +1,6 @@
 from django.urls import path 
-from api.views.home_view import home
+from django.views.generic import RedirectView
 
 urlpatterns = [
-    path('', home, name='home'),
+    path('', RedirectView.as_view(url='/orders/'), name='home'),
 ]

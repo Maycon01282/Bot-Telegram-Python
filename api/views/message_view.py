@@ -17,7 +17,7 @@ def create_message_view(request):
     description = request.POST.get('description')
     text = request.POST.get('text')
     message = create_message(name, description, text)
-    return JsonResponse({'id': message.id, 'name': message.name, 'description': message.description, 'text': message.text})
+    return render(request, 'main/broadcasts/all.html', {'id': message.id, 'name': message.name, 'description': message.description, 'text': message.text})
 
 @require_http_methods(["GET"])
 def get_message_view(request, message_id):
