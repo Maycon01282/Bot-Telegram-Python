@@ -1,0 +1,22 @@
+/* Estilo para corrigir o tamanho do header/navbar */
+.custom-navbar {
+    margin: 0; /* Remove margens */
+    padding: 0; /* Remove espaçamentos */
+    height: auto; /* Permite que a altura se ajuste automaticamente */
+  }
+  
+  /* Ajusta elementos dentro do navbar, como a marca */
+  .custom-navbar .navbar-brand {
+    padding: 10px; /* Ajusta o padding para reduzir a altura */
+  }
+  
+  /* Ajusta a altura do botão de logout e outras seções */
+  .custom-navbar .btn {
+    margin-top: 5px; /* Alinha melhor os botões */
+  }
+  
+  .custom-navbar .container-fluid {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  

@@ -1,9 +1,23 @@
 from django.http import JsonResponse
+from django.shortcuts import render
 from django.views.decorators.http import require_http_methods
 from api.services.user_service import UserService
 import json
+from django.contrib.auth.decorators import login_required
+
+@login_required
+def users(request):
+    user_service = UserService()
+    users_list = user_service.list_users()
+    return render(request, 'main/users/all.html', {
+        'users': users_list,
+        'isLoggedIn': request.user.is_authenticated,
+    })
 
 user_service = UserService()
+
+def register(request):
+    return render(request, 'register.html')
 
 @require_http_methods(["POST"])
 def create_user_view(request):

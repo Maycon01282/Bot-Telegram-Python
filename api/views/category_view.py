@@ -4,7 +4,30 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.views.decorators.csrf import csrf_exempt
 import json
+<<<<<<< HEAD
 from api.models.category_model import Category
+=======
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+from api.models.user_model import User
+from api.services.user_service import UserService
+
+@login_required
+def categories(request):
+    user_service = UserService()
+    categories_list = Category.objects.all()
+    user_data = user_service.get_user_by_id(request.user.id)
+    return render(request, 'main/categories/all.html', {
+        'categories': categories_list,
+        'isLoggedIn': request.user.is_authenticated,
+    })
+
+@require_http_methods(["GET"])
+def list_categories(request):
+    categories = Category.objects.all()
+    categories_data = [{"id": category.id, "name": category.name} for category in categories]
+    return JsonResponse(categories_data, safe=False)
+>>>>>>> develop
 
 @require_http_methods(["GET"])
 def get_category_by_id(request, category_id):

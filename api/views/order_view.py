@@ -3,6 +3,19 @@ from django.views.decorators.http import require_http_methods
 from api.services.order_service import list_orders, get_order_by_id, create_order, update_order, delete_order
 from api.models.order_model import Order
 import json
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+
+@login_required
+def orders(request):
+    # Obtenha todas as ordens do banco de dados
+    orders_list = Order.objects.all()
+    
+    # Renderize o template e passe a lista de ordens
+    return render(request, 'main/orders/all.html', {
+        'orders': orders_list,
+        'isLoggedIn': request.user.is_authenticated,
+    })
 
 @require_http_methods(["GET"])
 def list_orders_view(request):

@@ -1,0 +1,9 @@
+{% if request.user.is_authenticated %}
+  {% with isLoggedIn=True user=request.user %}
+    <!-- Conteúdo para usuários autenticados -->
+  {% endwith %}
+{% else %}
+  {% with isLoggedIn=False %}
+    <!-- Conteúdo para usuários não autenticados -->
+  {% endwith %}
+{% endif %}
