@@ -2,6 +2,7 @@
 
 from django.contrib import admin
 from django.urls import include, path
+from utils.swagger.swagger_views import urlpatterns as swagger_urls  # Import swagger_view urlpatterns
 
 urlpatterns = [
     path('', include('api.urls.home_url'), name='home'),
@@ -14,4 +15,5 @@ urlpatterns = [
     path('order_item/', include('api.urls.order_item_url')),  # Include order item URLs
     path('products/', include('api.urls.product_url')),  # Include product URLs
     path('users/', include('api.urls.user_url')),  # Include user URLs
+    path('', include('swagger_view')),  # Include the swagger_view URLs
 ]

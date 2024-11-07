@@ -1,70 +1,58 @@
-from django.http import JsonResponse
-from django.views.decorators.http import require_http_methods
-from api.services.order_service import list_orders, get_order_by_id, create_order, update_order, delete_order
+# api/views/order_view.py
+from rest_framework import viewsets, status
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from django.shortcuts import get_object_or_404
 from api.models.order_model import Order
-import json
-from django.shortcuts import render
-from django.contrib.auth.decorators import login_required
+from api.serializers.serializers import OrderSerializer
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 
-@login_required
-def orders(request):
-    # Obtenha todas as ordens do banco de dados
-    orders_list = Order.objects.all()
-    # Renderize o template e passe a lista de ordens
-    return render(request, 'main/orders/all.html', {
-        'orders': orders_list,
-        'isLoggedIn': request.user.is_authenticated,
-    })
+class OrderViewSet(viewsets.ModelViewSet):
+    queryset = Order.objects.all()
+    serializer_class = OrderSerializer
+    ##permission_classes = [IsAuthenticated]
 
-@require_http_methods(["GET"])
-def list_orders_view(request):
-    page = int(request.GET.get('page', 1))
-    page_size = int(request.GET.get('page_size', 10))
-    
-    orders_list = list_orders(page, page_size)
-    return JsonResponse(orders_list, safe=False)
-
-@require_http_methods(["GET"])
-def get_order_view(request, order_id):
-    order_data = get_order_by_id(order_id)
-    if order_data:
-        return JsonResponse({
-            'id': order_data.id,
-            'client': order_data.client,
-            'status': order_data.status,
-            'amount': order_data.amount
+    def list(self, request):
+        page = int(request.GET.get('page', 1))
+        page_size = int(request.GET.get('page_size', 10))
+        orders = Order.objects.all().order_by('id')
+        paginator = Paginator(orders, page_size)
+        try:
+            orders_page = paginator.page(page)
+        except PageNotAnInteger:
+            orders_page = paginator.page(1)
+        except EmptyPage:
+            orders_page = paginator.page(paginator.num_pages)
+        serializer = OrderSerializer(orders_page, many=True)
+        return Response({
+            "orders": serializer.data,
+            "page": orders_page.number,
+            "pages": paginator.num_pages,
+            "has_next": orders_page.has_next(),
+            "has_previous": orders_page.has_previous(),
         })
-    return JsonResponse({'error': 'Order not found'}, status=404)
 
-@require_http_methods(["POST"])
-def create_order_view(request):
-    data = json.loads(request.body)
-    order_data = create_order(data['client'], data['status'], data['amount'])
-    return JsonResponse({
-        'id': order_data.id,
-        'client': order_data.client,
-        'status': order_data.status,
-        'amount': order_data.amount
-    }, status=201)
+    def retrieve(self, request, pk=None):
+        order = get_object_or_404(Order, pk=pk)
+        serializer = OrderSerializer(order)
+        return Response(serializer.data)
 
-@require_http_methods(["PUT"])
-def update_order_view(request, order_id):
-    data = json.loads(request.body)
-    if 'status' in data and data['status'] not in Order.Status.values:
-        return JsonResponse({'error': 'Invalid status value'}, status=400)
-    order_data = update_order(order_id, data.get('client'), data.get('status'), data.get('amount'))
-    if order_data:
-        return JsonResponse({
-            'id': order_data.id,
-            'client': order_data.client,
-            'status': order_data.status,
-            'amount': order_data.amount
-        })
-    return JsonResponse({'error': 'Order not found'}, status=404)
+    def create(self, request):
+        serializer = OrderSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-@require_http_methods(["DELETE"])
-def delete_order_view(request, order_id):
-    success = delete_order(order_id)
-    if success:
-        return JsonResponse({"message": "Order deleted successfully"}, status=204)
-    return JsonResponse({'error': 'Order not found'}, status=404)
+    def update(self, request, pk=None):
+        order = get_object_or_404(Order, pk=pk)
+        serializer = OrderSerializer(order, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def destroy(self, request, pk=None):
+        order = get_object_or_404(Order, pk=pk)
+        order.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

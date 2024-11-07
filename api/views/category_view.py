@@ -1,92 +1,67 @@
-from django.views.decorators.http import require_http_methods
-from django.http import JsonResponse
+# views.py
+from rest_framework import viewsets, status
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from api.models.category_model import Category
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from api.serializers.serializers import CategorySerializer
 from django.core.exceptions import ObjectDoesNotExist
-from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
-from django.views.decorators.csrf import csrf_exempt
-import json
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
-from api.models.user_model import User
-from api.services.user_service import UserService
-from api.models.category_model import Category  # Add this import
 
-@login_required
-def categories(request):
-    user_service = UserService()
-    categories_list = Category.objects.all()
-    user_data = user_service.get_user_by_id(request.user.id)
-    return render(request, 'main/categories/all.html', {
-        'categories': categories_list,
-        'isLoggedIn': request.user.is_authenticated,
-    })
+class CategoryViewSet(viewsets.ModelViewSet):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    ##permission_classes = [IsAuthenticated]
 
-@require_http_methods(["GET"])
-def list_categories(request):
-    categories = Category.objects.all()
-    categories_data = [{"id": category.id, "name": category.name} for category in categories]
-    return JsonResponse(categories_data, safe=False)
+    def list_categories(self, request):
+        page = request.GET.get('page', 1)
+        per_page = request.GET.get('per_page', 10)
+        categories = Category.objects.all().order_by('id')
+        paginator = Paginator(categories, per_page)
+        try:
+            categories_page = paginator.page(page)
+        except PageNotAnInteger:
+            categories_page = paginator.page(1)
+        except EmptyPage:
+            categories_page = paginator.page(paginator.num_pages)
+        serializer = CategorySerializer(categories_page, many=True)
+        return Response({
+            "categories": serializer.data,
+            "page": categories_page.number,
+            "pages": paginator.num_pages,
+            "has_next": categories_page.has_next(),
+            "has_previous": categories_page.has_previous(),
+        })
 
-@require_http_methods(["GET"])
-def get_category_by_id(request, category_id):
-    try:
-        category = Category.objects.get(id=category_id)
-        return JsonResponse({"id": category.id, "name": category.name})
-    except ObjectDoesNotExist:
-        return JsonResponse({"error": "Category not found."}, status=404)
+    def get_category_by_id(self, request, pk=None):
+        try:
+            category = Category.objects.get(id=pk)
+            serializer = CategorySerializer(category)
+            return Response(serializer.data)
+        except ObjectDoesNotExist:
+            return Response({"error": "Category not found."}, status=status.HTTP_404_NOT_FOUND)
 
-@csrf_exempt
-@require_http_methods(["POST"])
-def create_category(request):
-    try:
-        data = json.loads(request.body)
-        category = Category.objects.create(name=data['name'])
-        return JsonResponse({"id": category.id, "name": category.name}, status=201)
-    except KeyError:
-        return JsonResponse({"error": "Invalid data."}, status=400)
+    def create_category(self, request):
+        serializer = CategorySerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-@csrf_exempt
-@require_http_methods(["PUT"])
-def update_category(request, category_id):
-    try:
-        category = Category.objects.get(id=category_id)
-        data = json.loads(request.body)
-        category.name = data.get('name', category.name)
-        category.save()
-        return JsonResponse({"id": category.id, "name": category.name})
-    except ObjectDoesNotExist:
-        return JsonResponse({"error": "Category not found."}, status=404)
-    except KeyError:
-        return JsonResponse({"error": "Invalid data."}, status=400)
+    def update_category(self, request, pk=None):
+        try:
+            category = Category.objects.get(id=pk)
+            serializer = CategorySerializer(category, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except ObjectDoesNotExist:
+            return Response({"error": "Category not found."}, status=status.HTTP_404_NOT_FOUND)
 
-@require_http_methods(["GET"])
-def list_categories(request):
-    page = request.GET.get('page', 1)
-    per_page = request.GET.get('per_page', 10)
-    
-    categories = Category.objects.all().order_by('id')  # Add ordering here
-    paginator = Paginator(categories, per_page)
-    
-    try:
-        categories_page = paginator.page(page)
-    except PageNotAnInteger:
-        categories_page = paginator.page(1)
-    except EmptyPage:
-        categories_page = paginator.page(paginator.num_pages)
-    
-    categories_data = [{"id": category.id, "name": category.name} for category in categories_page]
-    return JsonResponse({
-        "categories": categories_data,
-        "page": categories_page.number,
-        "pages": paginator.num_pages,
-        "has_next": categories_page.has_next(),
-        "has_previous": categories_page.has_previous(),
-    })
-@csrf_exempt
-@require_http_methods(["DELETE"])
-def delete_category(request, category_id):
-    try:
-        category = Category.objects.get(id=category_id)
-        category.delete()
-        return JsonResponse({"message": "Category deleted."}, status=204)
-    except ObjectDoesNotExist:
-        return JsonResponse({"error": "Category not found."}, status=404)
+    def delete_category(self, request, pk=None):
+        try:
+            category = Category.objects.get(id=pk)
+            category.delete()
+            return Response({"message": "Category deleted."}, status=status.HTTP_204_NO_CONTENT)
+        except ObjectDoesNotExist:
+            return Response({"error": "Category not found."}, status=status.HTTP_404_NOT_FOUND)

@@ -2,6 +2,12 @@
 
 from django.contrib import admin
 from django.urls import include, path
+from api.views.category_view import CategoryViewSet
+from rest_framework.routers import DefaultRouter
+from utils.swagger.swagger_views import urlpatterns as swagger_urls  # Import swagger_view urlpatterns
+
+router = DefaultRouter()
+router.register(r'categories', CategoryViewSet)
 
 urlpatterns = [
     path('', include('api.urls.home_url'), name='home'),
@@ -14,4 +20,5 @@ urlpatterns = [
     path('order_item/', include('api.urls.order_item_url')),  # Include order item URLs
     path('products/', include('api.urls.product_url')),  # Include product URLs
     path('users/', include('api.urls.user_url')),  # Include user URLs
+    path('', include(swagger_urls)),  # Include the swagger_view URLs
 ]
