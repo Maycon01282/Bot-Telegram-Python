@@ -1,56 +1,42 @@
-from django.http import JsonResponse
-from django.shortcuts import render
-from django.views.decorators.http import require_http_methods
-from api.services.user_service import UserService
-import json
-from django.contrib.auth.decorators import login_required
+# api/views/user_view.py
+from rest_framework import viewsets, status
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from django.shortcuts import get_object_or_404
+from api.models import User  # Import the custom user model
+from api.serializers.serializers import UserSerializer
 
-@login_required
-def users(request):
-    user_service = UserService()
-    users_list = user_service.list_users()
-    return render(request, 'main/users/all.html', {
-        'users': users_list,
-        'isLoggedIn': request.user.is_authenticated,
-    })
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    ##permission_classes = [IsAuthenticated]
 
-user_service = UserService()
+    def list(self, request):
+        users = User.objects.all()
+        serializer = UserSerializer(users, many=True)
+        return Response(serializer.data)
 
-def register(request):
-    return render(request, 'register.html')
+    def retrieve(self, request, pk=None):
+        user = get_object_or_404(User, pk=pk)
+        serializer = UserSerializer(user)
+        return Response(serializer.data)
 
-@require_http_methods(["POST"])
-def create_user_view(request):
-    data = json.loads(request.body)
-    user_data = user_service.create_user(data)
-    return JsonResponse(user_data, status=201)
+    def create(self, request):
+        serializer = UserSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-@require_http_methods(["PUT"])
-def update_user_view(request, user_id):
-    data = json.loads(request.body)
-    user_data = user_service.update_user(user_id, data)
-    if user_data:
-        return JsonResponse(user_data)
-    return JsonResponse({'error': 'User not found'}, status=404)
+    def update(self, request, pk=None):
+        user = get_object_or_404(User, pk=pk)
+        serializer = UserSerializer(user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-@require_http_methods(["DELETE"])
-def delete_user_view(request, user_id):
-    success = user_service.delete_user(user_id)
-    if success:
-        return JsonResponse({"message": "User deleted successfully"}, status=204)
-    return JsonResponse({'error': 'User not found'}, status=404)
-
-@require_http_methods(["GET"])
-def get_user_view(request, user_id):
-    user_data = user_service.get_user_by_id(user_id)
-    if user_data:
-        return JsonResponse(user_data)
-    return JsonResponse({'error': 'User not found'}, status=404)
-
-@require_http_methods(["GET"])
-def list_users_view(request):
-    page = int(request.GET.get('page', 1))
-    page_size = int(request.GET.get('page_size', 10))
-    
-    users_list = user_service.list_users(page, page_size)
-    return JsonResponse(users_list, safe=False)
+    def destroy(self, request, pk=None):
+        user = get_object_or_404(User, pk=pk)
+        user.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

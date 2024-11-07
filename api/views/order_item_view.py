@@ -1,41 +1,58 @@
-from django.http import JsonResponse
-from django.views.decorators.http import require_http_methods
-from api.services.order_item_service import (
-    create_order_item,
-    get_order_item_by_id,
-    update_order_item,
-    delete_order_item,
-    list_order_items_by_order
-)
-import json
+# api/views/order_item_view.py
+from rest_framework import viewsets, status
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from django.shortcuts import get_object_or_404
+from api.models.order_item_model import OrderItem
+from api.serializers.serializers import OrderItemSerializer
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 
-@require_http_methods(["POST"])
-def create_order_item_view(request):
-    data = request.POST
-    order_item = create_order_item(data['order_id'], data['item_id'], data['quantity'])
-    return JsonResponse({'id': order_item.id, 'order_id': order_item.order.id, 'item_id': order_item.item.id, 'quantity': order_item.quantity})
+class OrderItemViewSet(viewsets.ModelViewSet):
+    queryset = OrderItem.objects.all()
+    serializer_class = OrderItemSerializer
+    ##permission_classes = [IsAuthenticated]
 
-@require_http_methods(["GET"])
-def get_order_item_view(request, order_item_id):
-    order_item = get_order_item_by_id(order_item_id)
-    return JsonResponse({'id': order_item.id, 'order_id': order_item.order.id, 'item_id': order_item.item.id, 'quantity': order_item.quantity})
+    def create(self, request):
+        serializer = OrderItemSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-@require_http_methods(["GET"])
-def list_order_items_view(request, order_id):
-    page = int(request.GET.get('page', 1))
-    page_size = int(request.GET.get('page_size', 10))
-    
-    order_items_data = list_order_items_by_order(order_id, page, page_size)
-    return JsonResponse(order_items_data, safe=False)
+    def retrieve(self, request, pk=None):
+        order_item = get_object_or_404(OrderItem, pk=pk)
+        serializer = OrderItemSerializer(order_item)
+        return Response(serializer.data)
 
-@require_http_methods(["PUT"])
-def update_order_item_view(request, order_item_id):
-    data = json.loads(request.body)
-    quantity = data.get('quantity')
-    order_item = update_order_item(order_item_id, quantity)
-    return JsonResponse({'id': order_item.id, 'order_id': order_item.order.id, 'item_id': order_item.item.id, 'quantity': order_item.quantity})
+    def update(self, request, pk=None):
+        order_item = get_object_or_404(OrderItem, pk=pk)
+        serializer = OrderItemSerializer(order_item, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-@require_http_methods(["DELETE"])
-def delete_order_item_view(request, order_item_id):
-    delete_order_item(order_item_id)
-    return JsonResponse({'message': 'Order item deleted successfully'})
+    def destroy(self, request, pk=None):
+        order_item = get_object_or_404(OrderItem, pk=pk)
+        order_item.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def list_order_items(self, request, order_id=None):
+        page = int(request.GET.get('page', 1))
+        page_size = int(request.GET.get('page_size', 10))
+        order_items = OrderItem.objects.filter(order_id=order_id).order_by('id')
+        paginator = Paginator(order_items, page_size)
+        try:
+            order_items_page = paginator.page(page)
+        except PageNotAnInteger:
+            order_items_page = paginator.page(1)
+        except EmptyPage:
+            order_items_page = paginator.page(paginator.num_pages)
+        serializer = OrderItemSerializer(order_items_page, many=True)
+        return Response({
+            "order_items": serializer.data,
+            "page": order_items_page.number,
+            "pages": paginator.num_pages,
+            "has_next": order_items_page.has_next(),
+            "has_previous": order_items_page.has_previous(),
+        })

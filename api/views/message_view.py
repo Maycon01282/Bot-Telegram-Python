@@ -1,62 +1,60 @@
-from django.http import JsonResponse
-from django.views.decorators.http import require_http_methods
-from django.core.exceptions import ObjectDoesNotExist
+# api/views/message_view.py
+from rest_framework import viewsets, status
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from django.shortcuts import get_object_or_404
 from api.models.message_model import Message
-from api.services.message_service import create_message, get_message_by_id, update_message, delete_message, list_messages_paginated
-import json
-from django.shortcuts import render
-from django.contrib.auth.decorators import login_required
+from api.serializers.serializers import MessageSerializer
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 
-@login_required
-def message(request):
-    return render(request, 'main/broadcasts/add.html')
+class MessageViewSet(viewsets.ModelViewSet):
+    queryset = Message.objects.all()
+    serializer_class = MessageSerializer
+    permission_classes = [IsAuthenticated]
+    ##permission_classes = [IsAuthenticated]
 
-@require_http_methods(["POST"])
-def create_message_view(request):
-    name = request.POST.get('name')
-    description = request.POST.get('description')
-    text = request.POST.get('text')
-    message = create_message(name, description, text)
-    return render(request, 'main/broadcasts/all.html', {'id': message.id, 'name': message.name, 'description': message.description, 'text': message.text})
+    def list_messages(self, request):
+        page = int(request.GET.get('page', 1))
+        page_size = int(request.GET.get('page_size', 10))
+        messages = Message.objects.all().order_by('id')
+        paginator = Paginator(messages, page_size)
+        try:
+            messages_page = paginator.page(page)
+        except PageNotAnInteger:
+            messages_page = paginator.page(1)
+        except EmptyPage:
+            messages_page = paginator.page(paginator.num_pages)
+        serializer = MessageSerializer(messages_page, many=True)
+        return Response({
+            "messages": serializer.data,
+            "page": messages_page.number,
+            "pages": paginator.num_pages,
+            "has_next": messages_page.has_next(),
+            "has_previous": messages_page.has_previous(),
+        })
 
-@require_http_methods(["GET"])
-def get_message_view(request, message_id):
-    try:
-        message = get_message_by_id(message_id)
-        return JsonResponse({'id': message.id, 'name': message.name, 'description': message.description, 'text': message.text})
-    except ObjectDoesNotExist:
-        return JsonResponse({'error': 'Message not found'}, status=404)
+    def get_message_by_id(self, request, pk=None):
+        message = get_object_or_404(Message, id=pk)
+        serializer = MessageSerializer(message)
+        return Response(serializer.data)
 
-@require_http_methods(["GET"])
-def list_messages_view(request):
-    page = int(request.GET.get('page', 1))
-    page_size = int(request.GET.get('page_size', 10))
-    
-    messages = list_messages_paginated(page, page_size)
-    messages_data = [{"id": message.id, "name": message.name, "description": message.description, "text": message.text} for message in messages]
-    
-    return JsonResponse({
-        "messages": messages_data,
-        "page": page,
-        "page_size": page_size,
-        "total": len(messages_data)
-    }, safe=False)
+    def create_message(self, request):
+        serializer = MessageSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-@require_http_methods(["PUT"])
-def update_message_view(request, message_id):
-    name = request.PUT.get('name')
-    description = request.PUT.get('description')
-    text = request.PUT.get('text')
-    try:
-        message = update_message(message_id, name, description, text)
-        return JsonResponse({'id': message.id, 'name': message.name, 'description': message.description, 'text': message.text})
-    except ObjectDoesNotExist:
-        return JsonResponse({'error': 'Message not found'}, status=404)
+    def update_message(self, request, pk=None):
+        message = get_object_or_404(Message, id=pk)
+        serializer = MessageSerializer(message, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-@require_http_methods(["DELETE"])
-def delete_message_view(request, message_id):
-    try:
-        delete_message(message_id)
-        return JsonResponse({'status': 'Message deleted'})
-    except ObjectDoesNotExist:
-        return JsonResponse({'error': 'Message not found'}, status=404)
+    def delete_message(self, request, pk=None):
+        message = get_object_or_404(Message, id=pk)
+        message.delete()
+        return Response({"message": "Message deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
