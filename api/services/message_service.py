@@ -23,3 +23,9 @@ def update_message(message_id: int, name: str = None, description: str = None, t
 def delete_message(message_id: int) -> None:
     message = Message.objects.get(id=message_id)
     message.delete()
+
+def list_messages() -> list[Message]:
+    return list(Message.objects.all())
+def list_messages_paginated(page: int, page_size: int) -> list[Message]:
+    offset = (page - 1) * page_size
+    return list(Message.objects.all()[offset:offset + page_size])

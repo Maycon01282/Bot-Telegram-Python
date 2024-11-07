@@ -1,9 +1,25 @@
 from api.models.client_model import Client
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.core.exceptions import ObjectDoesNotExist
 
-def list_clients():
-    clients = Client.objects.all()
-    return [{"id": client.id, "name": client.name, "phone_number": client.phone_number, "city": client.city, "address": client.address, "is_active": client.is_active} for client in clients]
+def list_clients(page=1, page_size=10):
+    clients = Client.objects.all().order_by('id')  # Add ordering here
+    paginator = Paginator(clients, page_size)
+    
+    try:
+        clients_page = paginator.page(page)
+    except PageNotAnInteger:
+        clients_page = paginator.page(1)
+    except EmptyPage:
+        clients_page = paginator.page(paginator.num_pages)
+    
+    return {
+        "clients": [{"id": client.id, "name": client.name, "phone_number": client.phone_number, "city": client.city, "address": client.address, "is_active": client.is_active} for client in clients_page],
+        "total_pages": paginator.num_pages,
+        "current_page": clients_page.number,
+        "has_next": clients_page.has_next(),
+        "has_previous": clients_page.has_previous()
+    }
 
 def get_client_by_id(client_id):
     try:

@@ -2,17 +2,18 @@
 
 from django.contrib import admin
 from django.urls import include, path
+from api.views.auth_view import login_view
 
 urlpatterns = [
     path('', include('api.urls.home_url'), name='home'),
     path('login/', include('api.urls.auth_url'), name='login'),
     path('admin/', admin.site.urls),
-    path('categories/', include('api.urls.category_url')),  # Inclua as URLs do aplicativo de categorias
-    path('clients/', include('api.urls.client_url')),  # Inclua as URLs do aplicativo de clientes
-    path('message/', include('api.urls.message_url')), # Inclua as URLs do aplicativo de mensagens
-    path('message/', include('api.urls.message_url')),  # Inclua as URLs do aplicativo de mensagens
-    path('order/', include('api.urls.order_url')),  # Inclua as URLs do aplicativo de pedidos
-    path('order_item/', include('api.urls.order_item_url')),  # Inclua as URLs do aplicativo de itens de pedidos
-    path('products/', include('api.urls.product_url')),  # Inclua as URLs do aplicativo de produtos
-    path('users/', include('api.urls.user_url')),  # Inclua as URLs do aplicativo de usuários
+    path('categories/', include('api.urls.category_url')),  # Include category URLs
+    path('clients/', include('api.urls.client_url')),  # Include client URLs
+    path('message/', include('api.urls.message_url')),  # Include message URLs
+    path('order/', include('api.urls.order_url')),  # Include order URLs
+    path('order_item/', include('api.urls.order_item_url')),  # Include order item URLs
+    path('products/', include('api.urls.product_url')),  # Include product URLs
+    path('users/', include('api.urls.user_url')),  # Include user URLs
+    path('login/', login_view, name='login'),
 ]

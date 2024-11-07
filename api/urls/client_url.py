@@ -5,11 +5,10 @@ from api.views.client_view import (
 )
 
 urlpatterns = [
-    path('', clients, name='clients'),
-    path('list/', list_clients_view, name='list_clients'),  
+    path('', clients, name='clients'),  # Main page for clients
+    path('list/', list_clients_view, name='list_clients'),  # URL for listing clients with pagination
     path('<int:client_id>/', get_client_view, name='get_client'),
     path('create/', create_client_view, name='create_client'),
-    path('edit/<int:client_id>/', client_edit_page, name='client_edit_page'),  
-    path('update/<int:client_id>/', update_client_view, name='update_client'),  
+    path('update/<int:client_id>/', update_client_view, name='update_client'),
     path('delete/<int:client_id>/', delete_client_view, name='delete_client'),
 ]
