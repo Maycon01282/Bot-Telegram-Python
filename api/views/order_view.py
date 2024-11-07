@@ -10,7 +10,6 @@ from django.contrib.auth.decorators import login_required
 def orders(request):
     # Obtenha todas as ordens do banco de dados
     orders_list = Order.objects.all()
-    
     # Renderize o template e passe a lista de ordens
     return render(request, 'main/orders/all.html', {
         'orders': orders_list,
