@@ -2,12 +2,9 @@
 
 from django.contrib import admin
 from django.urls import include, path
-from api.views.category_view import CategoryViewSet
 from rest_framework.routers import DefaultRouter
 from utils.swagger.swagger_views import urlpatterns as swagger_urls  # Import swagger_view urlpatterns
 
-router = DefaultRouter()
-router.register(r'categories', CategoryViewSet)
 
 urlpatterns = [
     path('', include('api.urls.home_url'), name='home'),

@@ -4,8 +4,8 @@ from api.models.order_model import Order
 
 @login_required
 def home(request):
-    orders_list = Order.objects.all()
+    list_orders_view = Order.objects.all()
     return render(request, 'main/orders/all.html', {
-        'orders': orders_list,
+        'orders':  list_orders_view,
         'isLoggedIn': request.user.is_authenticated,
     })
