@@ -14,5 +14,5 @@ urlpatterns = [
     path('<int:order_id>/', get_order_view, name='get_order_by_id'),
     path('update/<int:order_id>/', update_order_view, name='update_order'),
     path('delete/<int:order_id>/', delete_order_view, name='delete_order'),
-    path('list/', list_orders_view, name='list_orders'),  # URL for listing orders with pagination
+    path('list/', list_orders_view, name='list_orders'), 
 ]
