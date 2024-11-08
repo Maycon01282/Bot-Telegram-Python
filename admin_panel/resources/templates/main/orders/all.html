@@ -32,7 +32,7 @@
     {% for order in orders %}
       <tr>
         <td>{{ order.id }}</td>
-        <td>{{ order.client.name|default:'' }} (<a target="_blank" href="{% url 'list_orders_by_client' order.client.id %}">view</a>)</td>
+        <td>{{ order.client.name|default:'' }} (<a target="_blank" href="{% url 'list_orders' order.client.id %}">view</a>)</td>
         <td>{{ order.createdDate|date:"d.m.Y H:i" }}</td>
         <td>{{ order.status.value }}</td>
         <td>{{ order.amount }} $</td>
