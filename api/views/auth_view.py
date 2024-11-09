@@ -10,7 +10,7 @@ def login_view(request):
             username = form.cleaned_data.get('username')
             password = form.cleaned_data.get('password')
             if authenticate_user(request, username, password):
-                return redirect('orders')  
+                return redirect('orders_kanban')  
             else:
                 login_error = 'Incorrect username and/or password. Please try again.'  # Defina a mensagem de erro
     else:
