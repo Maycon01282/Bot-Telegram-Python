@@ -2,6 +2,7 @@ from django.db import models
 
 class Order(models.Model):
     class Status(models.TextChoices):
+        NEW = 'new', 'New'
         IN_PROCESS = 'in_process', 'In Process'
         SENT = 'sent', 'Sent'
         DELIVERED = 'delivered', 'Delivered'

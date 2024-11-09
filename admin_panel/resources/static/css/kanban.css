@@ -1,0 +1,79 @@
+/* Reset básico para garantir consistência */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Estilos do Contêiner Principal */
+.kanban-board {
+    display: flex;
+    justify-content: space-between;
+    padding: 20px;
+    gap: 10px;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    background-color: #ffffff; /* Cor neutra */
+    border-radius: 8px;
+}
+
+/* Colunas do Kanban */
+.kanban-column {
+    background-color: #ffffff;
+    border: 1px solid #e6e6e6;
+    border-radius: 8px;
+    width: 24%;
+    display: flex;
+    flex-direction: column;
+    padding: 15px;
+    min-height: 600px; /* Altura mínima moderada */
+}
+
+.kanban-items {
+    flex-grow: 1;
+    padding-bottom: 20px; /* Aumenta a área de soltura no final da coluna */
+}
+
+/* Títulos das Colunas */
+.kanban-column h2 {
+    text-align: center;
+    padding: 10px;
+    font-size: 18px;
+    font-weight: bold;
+    color: white;
+    border-radius: 5px;
+    margin-bottom: 15px;
+}
+
+/* Cores Pastel para Títulos */
+.kanban-column .bg-primary {
+    background-color: #AECBFA; /* Azul pastel */
+    color: #1A237E;
+}
+
+.kanban-column .bg-warning {
+    background-color: #FFECB3; /* Amarelo pastel */
+    color: #795548;
+}
+
+.kanban-column .bg-info {
+    background-color: #B3E5FC; /* Ciano pastel */
+    color: #004D40;
+}
+
+.kanban-column .bg-success {
+    background-color: #C8E6C9; /* Verde pastel */
+    color: #2E7D32;
+}
+
+/* Itens do Kanban */
+.kanban-item {
+    background-color: #ffffff;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 10px;
+    margin-bottom: 10px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    cursor: grab;
+}

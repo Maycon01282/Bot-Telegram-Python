@@ -1,7 +1,7 @@
 # api/views/order_view.py
 from rest_framework import status
 from rest_framework.response import Response
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, render, redirect
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from api.models.order_model import Order
 from api.serializers.serializers import OrderSerializer
@@ -9,15 +9,40 @@ from rest_framework.decorators import api_view, permission_classes
 from django.contrib.auth.decorators import login_required
 from rest_framework.permissions import IsAuthenticated
 from drf_yasg.utils import swagger_auto_schema
-from drf_yasg import openapi
 
 @login_required
 def orders(request):
-    # Obtenha todas as ordens do banco de dados
+    """
+    Renderiza a página com todas as ordens.
+    """
     list_orders_view = Order.objects.all()
-    # Renderize o template e passe a lista de ordens
     return render(request, 'main/orders/all.html', {
         'orders': list_orders_view,
+        'isLoggedIn': request.user.is_authenticated,
+    })
+
+@login_required
+def edit_order_view(request, pk=None):
+    """
+    Renderiza a página de edição de um pedido existente.
+    """
+    order = get_object_or_404(Order, pk=pk)
+
+    if request.method == 'POST':
+        serializer = OrderSerializer(order, data=request.POST, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return redirect('orders')
+    else:
+        serializer = OrderSerializer(order)
+
+    # Passa as opções de status para o contexto
+    status_choices = Order.Status.choices
+
+    return render(request, 'main/orders/edit.html', {
+        'order': order,
+        'serializer': serializer,
+        'status_choices': status_choices,  # Opções de status disponíveis
         'isLoggedIn': request.user.is_authenticated,
     })
 
@@ -119,3 +144,15 @@ def delete_order_view(request, pk=None):
     order = get_object_or_404(Order, pk=pk)
     order.delete()
     return Response({"message": "Order deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+
+
+# view para o kanban de pedidos
+def orders_kanban_view(request):
+    # Organize pedidos por status
+    orders_by_status = {
+        'new': Order.objects.filter(status=Order.Status.NEW),
+        'in_process': Order.objects.filter(status=Order.Status.IN_PROCESS),
+        'sent': Order.objects.filter(status=Order.Status.SENT),
+        'delivered': Order.objects.filter(status=Order.Status.DELIVERED),
+    }
+    return render(request, 'main/orders/kanban.html', {'orders_by_status': orders_by_status})

@@ -1,11 +1,11 @@
 {% extends 'common/home.html' %}
 {% load static %}
 
-{% block home %}
-  <h1>Order editing</h1>
+{% block content %}
+  <h1>Order Editing</h1>
 
   {% if order %}
-    <form method="post" action="{% url 'orders_update' %}">
+    <form method="post" action="{% url 'edit_order' order.pk %}">
       {% csrf_token %}
       <div class="form-group row">
         <label class="col-sm-2">Id:</label>
@@ -18,7 +18,7 @@
         <label class="col-sm-2">Client:</label>
         <div class="col-sm-10">
           <input type="hidden" name="client" value="{{ order.client.id }}">
-          {{ order.client.name|default:'' }} (<a target="_blank" href="{% url 'clients_edit' order.client.id %}">view</a>)
+          {{ order.client.name|default:'' }} (<a target="_blank" href="{% url 'update_client' order.client.id %}">view</a>)
         </div>
       </div>
 
@@ -34,10 +34,10 @@
         <label class="col-sm-2">Status:</label>
         <div class="col-sm-10">
           <select class="form-control" name="status">
-            {% for status in order.status.values %}
-              <option value="{{ status.name }}"
-                      {% if order.status.name == status.name %}selected{% endif %}>
-                {{ status.value }}
+            {% for status_code, status_label in status_choices %}
+              <option value="{{ status_code }}"
+              {% if order.status == status_code %}selected{% endif %}>
+                {{ status_label }}
               </option>
             {% endfor %}
           </select>
@@ -54,7 +54,7 @@
         </div>
       </div>
 
-      {% include 'items/all.html' %}
+      {% include 'main/orders/items/all.html' %}
 
       <button class="btn btn-success" type="submit">Update</button>
     </form>
@@ -63,7 +63,7 @@
       <button class="btn btn-info" type="submit">Back</button>
     </form>
 
-    <form method="post" action="{% url 'orders_delete' %}">
+    <form method="post" action="{% url 'delete_order' order.id %}">
       {% csrf_token %}
       <input type="hidden" name="id" value="{{ order.id }}">
       <button class="btn btn-danger" type="submit">Delete</button>

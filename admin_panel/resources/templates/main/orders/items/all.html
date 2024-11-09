@@ -1,35 +1,53 @@
 {% load static %}
+{% load custom_filters %}
+
 
 <div class="mt-5">
     <h1>Order items</h1>
-    {% block table %}
     <table id="items" class="table table-striped table-bordered" cellspacing="0" width="100%">
         <thead>
-        <tr>
-            <th>Name</th>
-            <th>Quantity</th>
-            <th>Product price</th>
-            <th>Total price</th>
-        </tr>
+            <tr>
+                <th>Name</th>
+                <th>Quantity</th>
+                <th>Product price</th>
+                <th>Total price</th>
+            </tr>
         </thead>
         <tbody>
-        {% for item in order.items %}
-            <input type="hidden" name="items[{{ forloop.counter0 }}].id" value="{{ item.id }}">
-            <input type="hidden" name="items[{{ forloop.counter0 }}].order" value="{{ order.id }}">
-            {% if item.product %}
-                <input type="hidden" name="items[{{ forloop.counter0 }}].product" value="{{ item.product.id }}">
-            {% endif %}
-            <input type="hidden" name="items[{{ forloop.counter0 }}].quantity" value="{{ item.quantity }}">
-            <input type="hidden" name="items[{{ forloop.counter0 }}].productName" value="{{ item.productName }}">
-            <input type="hidden" name="items[{{ forloop.counter0 }}].productPrice" value="{{ item.productPrice }}">
-            <tr>
-                <td>{{ item.productName }}</td>
-                <td>{{ item.quantity }} pcs.</td>
-                <td>{{ item.productPrice }} $</td>
-                <td>{{ item.totalPrice }} $</td>
-            </tr>
-        {% endfor %}
+            {% for item in order.order_items.all %}
+                <input type="hidden" name="items[{{ forloop.counter0 }}].id" value="{{ item.id }}">
+                <input type="hidden" name="items[{{ forloop.counter0 }}].order" value="{{ order.id }}">
+                {% if item.product %}
+                    <input type="hidden" name="items[{{ forloop.counter0 }}].product" value="{{ item.product.id }}">
+                {% endif %}
+                <input type="hidden" name="items[{{ forloop.counter0 }}].quantity" value="{{ item.quantity }}">
+                
+                <tr>
+                    <td>
+                        {% if item.product %}
+                            {{ item.product.name }}
+                        {% else %}
+                            No product
+                        {% endif %}
+                    </td>
+                    <td>{{ item.quantity }} pcs.</td>
+                    <td>
+                        {% if item.product %}
+                            {{ item.product.price }} $
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item.product %}
+                            {{ item.quantity|multiply:item.product.price }} $
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
         </tbody>
+        
     </table>
-    {% endblock %}
 </div>

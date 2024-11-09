@@ -3,16 +3,6 @@
 
 {% block content %}
 <h1>Orders list</h1>
-{% block head %}
-  {{ block.super }}
-  <link rel="stylesheet" href="{% static 'css/dataTables.bootstrap.css' %}">
-  <link rel="stylesheet" href="{% static 'css/custom.css' %}">
-  <script src="{% static 'js/jquery.dataTables.js' %}"></script>
-  <script src="{% static 'js/dataTables.responsive.js' %}"></script>
-  <script src="{% static 'js/dataTables.bootstrap.js' %}"></script>
-  <script src="{% static 'js/jquery-1.10.2.js' %}"></script>
-  <script src="{% static 'js/bootstrap.js' %}"></script>
-{% endblock %}
 
 {% include 'common/table.html' with name="orders" %}
 
@@ -30,21 +20,49 @@
   </thead>
   <tbody>
     {% for order in orders %}
-      <tr>
-        <td>{{ order.id }}</td>
-        <td>{{ order.client.name|default:'' }} (<a target="_blank" href="{% url 'list_orders' order.client.id %}">view</a>)</td>
-        <td>{{ order.createdDate|date:"d.m.Y H:i" }}</td>
-        <td>{{ order.status.value }}</td>
-        <td>{{ order.amount }} $</td>
-        <td>
-          <a class="btn btn-xs btn-info" href="{% url 'update_order' order.id %}">
-            <i class="fa fa-pencil" aria-hidden="true"></i>
-          </a>
-        </td>
-      </tr>
-    {% endfor %}
+    <tr>
+      <td>{{ order.id }}</td>
+      <td>
+        {{ order.client.name }}
+        (<a href="#" data-toggle="modal" data-target="#clientModal-{{ order.client.id }}">view</a>)
+      </td>
+      <td>{{ order.createdDate|date:"d.m.Y H:i" }}</td>
+      <td>{{ order.get_status_display }}</td>
+      <td>{{ order.amount }} $</td>
+      <td>
+        <a class="btn btn-xs btn-info" href="{% url 'edit_order' order.pk %}">
+          <i class="fa fa-pencil" aria-hidden="true"></i>
+        </a>
+      </td>
+    </tr>
+  
+    <!-- Modal para cada cliente -->
+    <div class="modal fade" id="clientModal-{{ order.client.id }}" tabindex="-1" role="dialog" aria-labelledby="clientModalLabel-{{ order.client.id }}" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="clientModalLabel-{{ order.client.id }}">Informações do Cliente</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <!-- Exibindo as informações do cliente -->
+                    <p><strong>Name:</strong> {{ order.client.name }}</p>
+                    <p><strong>Email:</strong> {{ order.client.email }}</p>
+                    <p><strong>Phone:</strong> {{ order.client.phone }}</p>
+                    <p><strong>Address:</strong> {{ order.client.address }}</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Fechar</button>
+                    <a href="{% url 'edit_client' order.client.id %}" class="btn btn-primary">Editar Cliente</a>
+                </div>
+            </div>
+        </div>
+    </div>
+  {% endfor %}
   </tbody>
 </table>
 {% endblock %}
-{% endblock %}
 
+{% endblock %}

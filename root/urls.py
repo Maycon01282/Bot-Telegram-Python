@@ -7,7 +7,6 @@ from utils.swagger.swagger_views import urlpatterns as swagger_urls
 
 urlpatterns = [
     path('', include('api.urls.auth_url'), name='login'),
-    path('home/', include('api.urls.home_url'), name='home'),
     path('admin/', admin.site.urls),
     path('categories/', include('api.urls.categories_url')),
     path('clients/', include('api.urls.client_url')),
@@ -19,4 +18,3 @@ urlpatterns = [
     path('register/', include('api.urls.user_url')),
     path('', include(swagger_urls)),
 ]
-''

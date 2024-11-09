@@ -1,0 +1,111 @@
+{% extends 'common/home.html' %}
+{% load static %}
+
+<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/kanban.css' %}">
+
+<h1 class="my-4">Orders</h1>
+
+<div class="kanban-board">
+    <!-- Coluna de Pedidos Novos -->
+    <div class="kanban-column">
+        <h2 class="bg-primary">New</h2>
+        <div id="new-orders" class="kanban-items" data-status="new">
+            {% for order in orders_by_status.new %}
+            <div class="kanban-item" data-id="{{ order.id }}">
+                <p><strong>ID:</strong> {{ order.id }}</p>
+                <p><strong>Cliente:</strong> {{ order.client.name }}</p>
+                <p><strong>Valor:</strong> {{ order.amount }} $</p>
+                <p><strong>Hora:</strong> {{ order.created_date|date:"H:i" }}</p>
+                <a href="{% url 'edit_order' order.id %}" class="btn btn-outline-light" style="color: inherit; border-color: inherit;">Editar Pedido</a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Coluna de Pedidos Em Processo -->
+    <div class="kanban-column">
+        <h2 class="bg-warning">In Process</h2>
+        <div id="in-process-orders" class="kanban-items" data-status="in_process">
+            {% for order in orders_by_status.in_process %}
+            <div class="kanban-item" data-id="{{ order.id }}">
+                <p><strong>ID:</strong> {{ order.id }}</p>
+                <p><strong>Cliente:</strong> {{ order.client.name }}</p>
+                <p><strong>Valor:</strong> {{ order.amount }} $</p>
+                <p><strong>Hora:</strong> {{ order.created_date|date:"H:i" }}</p>
+                <a href="{% url 'edit_order' order.id %}" class="btn btn-outline-light" style="color: inherit; border-color: inherit;">Editar Pedido</a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Coluna de Pedidos Enviados -->
+    <div class="kanban-column">
+        <h2 class="bg-info">Sent</h2>
+        <div id="sent-orders" class="kanban-items" data-status="sent">
+            {% for order in orders_by_status.sent %}
+            <div class="kanban-item" data-id="{{ order.id }}">
+                <p><strong>ID:</strong> {{ order.id }}</p>
+                <p><strong>Cliente:</strong> {{ order.client.name }}</p>
+                <p><strong>Valor:</strong> {{ order.amount }} $</p>
+                <p><strong>Hora:</strong> {{ order.created_date|date:"H:i" }}</p>
+                <a href="{% url 'edit_order' order.id %}" class="btn btn-outline-light" style="color: inherit; border-color: inherit;">Editar Pedido</a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Coluna de Pedidos Entregues -->
+    <div class="kanban-column">
+        <h2 class="bg-success">Delivered</h2>
+        <div id="delivered-orders" class="kanban-items" data-status="delivered">
+            {% for order in orders_by_status.delivered %}
+            <div class="kanban-item" data-id="{{ order.id }}">
+                <p><strong>ID:</strong> {{ order.id }}</p>
+                <p><strong>Cliente:</strong> {{ order.client.name }}</p>
+                <p><strong>Valor:</strong> {{ order.amount }} $</p>
+                <p><strong>Hora:</strong> {{ order.created_date|date:"H:i" }}</p>
+                <a href="{% url 'edit_order' order.id %}" class="btn btn-outline-light" style="color: inherit; border-color: inherit;">Editar Pedido</a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
+<script>
+    document.querySelectorAll('.kanban-items').forEach(function (column) {
+        new Sortable(column, {
+            group: 'orders',
+            animation: 150,
+            emptyInsertThreshold: 25, // Reduzido para tornar a área de aceitação mais precisa
+            onEnd: async function (evt) {
+                const orderId = evt.item.dataset.id;
+                const newStatus = evt.to.dataset.status;
+
+                try {
+                    const response = await fetch(`/order/update_status/`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        },
+                        body: JSON.stringify({ id: orderId, status: newStatus })
+                    });
+
+                    if (!response.ok) {
+                        alert('Erro ao atualizar o status do pedido. A operação não foi salva.');
+                        evt.from.appendChild(evt.item);  // Reverte a movimentação
+                    }
+                } catch (error) {
+                    console.error('Erro na atualização do status:', error);
+                    alert('Erro de conexão. Por favor, tente novamente.');
+                    evt.from.appendChild(evt.item);  // Reverte a movimentação
+                }
+            }
+        });
+    });    
+</script>
+{% endblock %}
