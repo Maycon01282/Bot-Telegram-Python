@@ -26,15 +26,22 @@
           <td>{{ client.id }}</td>
           <td>{{ client.name|default:'' }}</td>
           <td>{{ client.city|default:'' }}</td>
-          <td>{% if client.active %}Yes{% else %}No{% endif %}</td>
           <td>
-            <a class="btn btn-xs btn-info" href="{% url 'client_edit_page' client.id %}">
+            {% if client.is_active %}
+                <span class="text-success">Active</span>
+            {% else %}
+                <span class="text-danger">Inactive</span>
+            {% endif %}
+        </td>
+        
+          <td>
+            <a class="btn btn-xs btn-info" href="{% url 'edit_client' client.id %}">
               <i class="fa fa-pencil" aria-hidden="true"></i>
             </a>
           </td>
         </tr>
       {% endfor %}
     </tbody>
-  </table>1
+  </table>
   {% endblock %}
 {% endblock %}

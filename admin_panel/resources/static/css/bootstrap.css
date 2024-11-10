@@ -136,6 +136,8 @@ html input[type="button"],
 input[type="reset"],
 input[type="submit"] {
   -webkit-appearance: button;
+     -moz-appearance: button;
+          appearance: button;
   cursor: pointer;
 }
 button[disabled],
@@ -166,10 +168,19 @@ input[type="search"] {
      -moz-box-sizing: content-box;
           box-sizing: content-box;
   -webkit-appearance: textfield;
+     -moz-appearance: textfield;
+          appearance: textfield;
 }
 input[type="search"]::-webkit-search-cancel-button,
 input[type="search"]::-webkit-search-decoration {
   -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  appearance: none;
+     -moz-appearance: none;
+          appearance: none;
+     -moz-appearance: none;
+          appearance: none;
 }
 fieldset {
   padding: .35em .625em .75em;
@@ -2607,6 +2618,7 @@ textarea.form-control {
 }
 input[type="search"] {
   -webkit-appearance: none;
+  appearance: none;
 }
 @media screen and (-webkit-min-device-pixel-ratio: 0) {
   input[type="date"].form-control,
@@ -5866,6 +5878,7 @@ button.list-group-item-danger.active:focus {
 }
 button.close {
   -webkit-appearance: none;
+  appearance: none;
   padding: 0;
   cursor: pointer;
   background: transparent;
