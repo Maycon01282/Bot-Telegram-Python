@@ -1,22 +1,12 @@
 {% extends 'common/home.html' %}
-{% load static %}
 
 {% block content %}
-  <h1>Client editing</h1>
-  
-  {% if messages %}
-  <div>
-    {% for message in messages %}
-      <div class="alert {% if message.tags %}alert-{{ message.tags }}{% else %}alert-info{% endif %}" role="alert">
-        {{ message }}
-      </div>
-    {% endfor %}
-  </div>
-{% endif %}
+  <h1>Client Editing</h1>
 
   {% if client %}
-    <form method="post" action="{% url 'update_client' client.id %}">
+    <form method="post" action="{% url 'edit_client' client.id %}">
       {% csrf_token %}
+      
       <div class="form-group row">
         <label class="col-sm-2">Id:</label>
         <div class="col-sm-10">
@@ -35,19 +25,15 @@
         <label class="col-sm-2">Name:</label>
         <div class="col-sm-10">
           <input class="form-control" name="name" value="{{ client.name|default:'' }}">
-          {% if nameError %}
-            <div class="text-warning">{{ nameError }}</div>
-          {% endif %}
+          {% if nameError %}<div class="text-warning">{{ nameError }}</div>{% endif %}
         </div>
       </div>
 
       <div class="form-group row">
         <label class="col-sm-2">Phone number:</label>
         <div class="col-sm-10">
-          <input class="form-control" name="phoneNumber" value="{{ client.phoneNumber|default:'' }}">
-          {% if phoneNumberError %}
-            <div class="text-warning">{{ phoneNumberError }}</div>
-          {% endif %}
+          <input class="form-control" name="phone_number" value="{{ client.phone_number|default:'' }}">
+          {% if phoneNumberError %}<div class="text-warning">{{ phoneNumberError }}</div>{% endif %}
         </div>
       </div>
 
@@ -55,9 +41,7 @@
         <label class="col-sm-2">City:</label>
         <div class="col-sm-10">
           <input class="form-control" name="city" value="{{ client.city|default:'' }}">
-          {% if cityError %}
-            <div class="text-warning">{{ cityError }}</div>
-          {% endif %}
+          {% if cityError %}<div class="text-warning">{{ cityError }}</div>{% endif %}
         </div>
       </div>
 
@@ -65,21 +49,26 @@
         <label class="col-sm-2">Address:</label>
         <div class="col-sm-10">
           <input class="form-control" name="address" value="{{ client.address|default:'' }}">
-          {% if addressError %}
-            <div class="text-warning">{{ addressError }}</div>
-          {% endif %}
+          {% if addressError %}<div class="text-warning">{{ addressError }}</div>{% endif %}
         </div>
       </div>
 
       <div class="form-group row">
         <label class="col-sm-2">Active:</label>
         <div class="col-sm-10">
-          <select class="form-control" name="active">
-            <option value="true" {% if client.is_active %}selected{% endif %}>Yes</option>
-            <option value="false" {% if not client.is_active %}selected{% endif %}>No</option>
+          <select class="form-control" name="is_active">
+            <option value="True" {% if client.is_active %}selected{% endif %}>Yes</option>
+            <option value="False" {% if not client.is_active %}selected{% endif %}>No</option>
           </select>
         </div>
       </div>
+      <td>
+        {% if client.is_active %}
+            Active
+        {% else %}
+            Inactive
+        {% endif %}
+    </td>      
 
       <button class="btn btn-success" type="submit">Update</button>
     </form>
