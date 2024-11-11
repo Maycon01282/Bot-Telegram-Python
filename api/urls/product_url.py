@@ -4,23 +4,18 @@ from api.views.product_view import (
     list_products_view,
     create_product_view,
     update_product_view,
-    delete_product,
+    delete_product_view,
     get_product_view,
-    products,
-    create_product,
-    edit_product,
     list_products_by_category,
+    delete_product
 )
 
-
 urlpatterns = [
-    path('', products, name='products'),
     path('list/', list_products_view, name='list_products'),
-    path('create/api', create_product_view, name='create_product_api'),
-    path('create/', create_product, name='create_product'),
-    path('update/<int:pk>/', edit_product, name='edit_product'),
-    path('update/<int:pk>/api/', update_product_view, name='update_product_api'),
-    path('delete/<int:pk>/', delete_product, name='delete_product'),
+    path('create/', create_product_view, name='create_product'),
+    path('update/<int:pk>/', update_product_view, name='update_product'),
+    path('delete/<int:pk>/', delete_product_view, name='delete_product'),
     path('<int:pk>/', get_product_view, name='get_product'),
-    path('list_by_category/', list_products_by_category, name='list_products_by_category')
+    path('category/<int:category_id>/', list_products_by_category, name='list_products_by_category'),
+    path('delete/<int:pk>/', delete_product, name='delete_product'),
 ]
