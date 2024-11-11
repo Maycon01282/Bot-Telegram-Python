@@ -8,7 +8,8 @@ from api.views.product_view import (
     get_product_view,
     products,
     create_product,
-    edit_product
+    edit_product,
+    list_products_by_category,
 )
 
 
@@ -21,4 +22,5 @@ urlpatterns = [
     path('update/<int:pk>/api/', update_product_view, name='update_product_api'),
     path('delete/<int:pk>/', delete_product, name='delete_product'),
     path('<int:pk>/', get_product_view, name='get_product'),
+    path('list_by_category/', list_products_by_category, name='list_products_by_category')
 ]
