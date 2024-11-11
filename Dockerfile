@@ -1,29 +1,25 @@
-FROM python:3.12-slim
+FROM python:3.11-slim
 
-# Set environment variables
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
+ENV PYTHONUNBUFFERED=1
 
-# Set work directory
-WORKDIR /app
+# Create and set the working directory
+WORKDIR /webapps/chat-bot-telegram
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    default-libmysqlclient-dev \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/*
+# Install dependencies
+RUN apt-get update && apt-get upgrade -y && apt-get install -y \
+    libsqlite3-dev \
+    default-mysql-client \
+    && rm -rf /var/lib/apt/lists/*  # Clean up the apt cache to reduce image size
 
-# Copy project requirements
-COPY requirements.txt /app/
-
-# Install Python dependencies
+# Copy requirements.txt and install Python dependencies
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy project files
-COPY . /app/
+# Copy the rest of the application code
+COPY . .
 
-# Expose port 8000
+# Expose the port the app runs on
 EXPOSE 8000
 
-# Run the application
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+# Command to run the application
+CMD ["python", "bot_script.py"]
