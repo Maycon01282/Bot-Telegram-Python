@@ -51,9 +51,6 @@ def get_user_view(_, pk=None):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def create_user_view(request):
-    """
-    Cria um novo usuário.
-    """
     serializer = UserSerializer(data=request.data)
     if serializer.is_valid():
         try:
@@ -67,9 +64,6 @@ def create_user_view(request):
 @api_view(['PUT', 'PATCH'])
 @permission_classes([IsAuthenticated])
 def update_user_view(request, pk=None):
-    """
-    Atualiza um usuário existente.
-    """
     user = get_object_or_404(User, pk=pk)
     serializer = UserSerializer(user, data=request.data, partial=True)
     if serializer.is_valid():
@@ -81,9 +75,6 @@ def update_user_view(request, pk=None):
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
 def delete_user_view(_, pk=None):
-    """
-    Deleta um usuário pelo ID.
-    """
     user = get_object_or_404(User, pk=pk)
     user.delete()
     return Response({"message": "User deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
