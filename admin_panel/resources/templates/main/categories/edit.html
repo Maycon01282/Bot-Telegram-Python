@@ -1,11 +1,11 @@
 {% extends 'common/home.html' %}
 {% load static %}
 
-{% block home %}
+{% block content %}
   <h1>Category editing</h1>
 
   {% if category %}
-    <form method="post" action="{% url 'categories_update' %}">
+    <form method="post" action="{% url 'update_category' category.id %}">
       {% csrf_token %}
       <div class="form-group row">
         <label class="col-sm-2">Id:</label>
@@ -31,11 +31,10 @@
       <button class="btn btn-info" type="submit">Back</button>
     </form>
 
-    <form method="post" action="{% url 'categories_delete' %}">
+    <form method="post" action="{% url 'delete_category_post' category.id %}">
       {% csrf_token %}
-      <input type="hidden" name="id" value="{{ category.id }}">
       <button class="btn btn-danger" type="submit">Delete</button>
-    </form>
+  </form>
 
   {% else %}
     <div class="alert alert-danger" role="alert">

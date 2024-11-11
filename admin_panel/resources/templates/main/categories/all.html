@@ -1,14 +1,12 @@
 {% extends 'common/home.html' %}
 {% load static %}
-
-{% block home %}
+{% block content %}
   <h1>Category List</h1>
 
   <div class="text-center mb-4">
     <a class="btn btn-sm btn-info" href="{% url 'create_category' %}">Add Category</a>
   </div>
 
-  {% block content %}
   {% include 'common/table.html' with name="categories" %}
   <table id="categories" class="table table-striped table-bordered" cellspacing="0" width="100%">
     <thead>
@@ -32,5 +30,16 @@
       {% endfor %}
     </tbody>
   </table>
-  {% endblock %}
+
+  {% if messages %}
+  <div>
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} mt-3" role="alert">
+        {{ message }}
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+
 {% endblock %}

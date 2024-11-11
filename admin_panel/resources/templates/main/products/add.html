@@ -4,22 +4,31 @@
 {% block content %}
   <h1>Product adding</h1>
 
-  {% include 'common/fileinput.html' with id='photo' photo='' %}
-  <link href="{% static 'css/bootstrap-select.css' %}" rel="stylesheet">
-  <script src="{% static 'js/bootstrap-select.js' %}"></script>
+  {% if messages %}
+  <div>
+    {% for message in messages %}
+      <div class="alert {% if message.tags %}alert-{{ message.tags }}{% else %}alert-info{% endif %}" role="alert">
+        {{ message }}
+      </div>
+    {% endfor %}
+  </div>
+  {% endif %}
 
   {% if category_error %}
   <div class="alert alert-warning" role="alert">
     {{ category_error }}
   </div>
-{% endif %}
+  {% endif %}
 
-  <form method="post" action="{% url 'product-create' %}" enctype="multipart/form-data">
+  <form method="post" action="{% url 'create_product' %}" enctype="multipart/form-data">
     {% csrf_token %}
     <div class="form-group row">
       <label class="col-sm-2">Photo:</label>
       <div class="col-sm-10">
-        <input class="form-control" id="photo" type="file" name="photo" required>
+        <input type="file" class="form-control" id="photo" name="photo" accept="image/*" required>
+        {% if errors.photo %}
+          <div class="text-warning">{{ errors.photo }}</div>
+        {% endif %}
       </div>
     </div>
 
@@ -73,4 +82,27 @@
   <form method="get" action="{% url 'products' %}">
     <button class="btn btn-info" type="submit">Back</button>
   </form>
+
+  {% block fileinput %}
+  <link rel="stylesheet" href="{% static 'css/fileinput.css' %}">
+  <script src="{% static 'js/fileinput.js' %}"></script>
+
+  <script>
+    $(document).ready(function() {
+      $('#photo').fileinput({
+        browseClass: "btn btn-primary btn-block",
+        showRemove: false,
+        showClose: false,
+        showUpload: false,
+        maxFileSize: 5000,
+        allowedFileExtensions: ["jpg", "png"],
+        {% if photo %}
+          initialPreview: ['{{ photo }}'],
+          initialPreviewAsData: true,
+          initialPreviewConfig: [{type: "image", key: 1, showRemove: false}]
+        {% endif %}
+      });
+    });
+  </script>
+  {% endblock %}
 {% endblock %}
