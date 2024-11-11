@@ -52,9 +52,7 @@ def get_product_view(pk=None):
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated])
 def create_product_view(request):
-    # request.data já lida com arquivos em FILES e dados em POST, então basta usar request.data
     serializer = ProductSerializer(data=request.data)
-    
     if serializer.is_valid():
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -66,13 +64,8 @@ def create_product_view(request):
 def update_product_view(request, pk=None):
     product = get_object_or_404(Product, pk=pk)
     data = request.data.copy()
-    
-    # Combine request.data and request.FILES into a single dictionary
     data.update(request.FILES)
-    
-    # Create the serializer with `data` and `FILES`, keeping `partial=True`
     serializer = ProductSerializer(product, data=data, partial=True)
-    
     if serializer.is_valid():
         serializer.save()
         return Response(serializer.data)
@@ -85,15 +78,13 @@ def delete_product_view(pk=None):
     product = get_object_or_404(Product, pk=pk)
     product.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
+
 @login_required
 def create_product(request):
     if request.method == 'POST':
-        # Combine request.POST and request.FILES into a single dictionary
         data = request.POST.copy()
         data.update(request.FILES)
-        
         serializer = ProductSerializer(data=data)
-        
         if serializer.is_valid():
             serializer.save()
             messages.success(request, 'Produto criado com sucesso!')
@@ -105,26 +96,20 @@ def create_product(request):
                 'errors': serializer.errors,
                 'categories': Category.objects.all()
             })
-    
     return render(request, 'main/products/add.html', {
         'isLoggedIn': request.user.is_authenticated,
         'categories': Category.objects.all()
     })
+    
 @login_required
 def edit_product(request, pk):
     product = get_object_or_404(Product, pk=pk)
-
     if request.method == 'POST':
-        # Combine request.POST e request.FILES diretamente em `request.data`
         data = request.POST.copy()
         data.update(request.FILES)
-        
-        # If no new image is provided, keep the existing one
         if 'photo' not in request.FILES:
             data['photo'] = product.photo
-        
         serializer = ProductSerializer(product, data=data, partial=True)
-        
         if serializer.is_valid():
             serializer.save()
             messages.success(request, 'Produto atualizado com sucesso!')
@@ -137,7 +122,6 @@ def edit_product(request, pk):
                 'errors': serializer.errors,
                 'categories': Category.objects.all()
             })
-
     return render(request, 'main/products/edit.html', {
         'product': product,
         'isLoggedIn': request.user.is_authenticated,
@@ -152,3 +136,13 @@ def delete_product(request, pk):
         messages.success(request, 'Produto excluído com sucesso!')
         return redirect('products')
     return render(request, 'main/products/confirm_delete.html', {'product': product})
+
+    @login_required
+    def list_products_by_category(request, category_id):
+        category = get_object_or_404(Category, id=category_id)
+        products = Product.objects.filter(category=category)
+        return render(request, 'main/products/by_category.html', {
+            'category': category,
+            'products': products,
+            'isLoggedIn': request.user.is_authenticated
+        })
