@@ -10,19 +10,21 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
 
-    api:
-        image: python:3.9
-        container_name: python_api
-        volumes:
-          - .:/app
-        working_dir: /app
-        command: python app.py
-        ports:
-          - "5000:5000"
-        environment:
-          - DATABASE_URL=mysql://root:root@db:3306/telegrambot
-        depends_on:
-          - db
+  api:
+    build:
+      context: .  # Constrói a partir do Dockerfile na pasta atual
+      dockerfile: Dockerfile
+    container_name: python_api
+    volumes:
+      - .:/app
+    working_dir: /app
+    command: python bot_script.py
+    ports:
+      - "5000:5000"
+    environment:
+      - DATABASE_URL=mysql://root:root@db:3306/telegrambot
+    depends_on:
+      - db
 
 volumes:
   mysql_data:
