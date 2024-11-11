@@ -62,17 +62,9 @@
           </select>
         </div>
       </div>
-      <td>
-        {% if client.is_active %}
-            Active
-        {% else %}
-            Inactive
-        {% endif %}
-    </td>      
-
+      <td>    
       <button class="btn btn-success" type="submit">Update</button>
     </form>
-
     <form method="get" action="{% url 'clients' %}">
       <button class="btn btn-info" type="submit">Back</button>
     </form>

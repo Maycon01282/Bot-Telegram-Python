@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib.auth.decorators import login_required
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework import status, permissions
@@ -10,6 +10,7 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.core.exceptions import ObjectDoesNotExist
 from api.models.user_model import User
 from api.services.user_service import UserService
+from django.contrib import messages
 
 @login_required
 def categories(request):
@@ -65,19 +66,26 @@ def create_category(request):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-@swagger_auto_schema(method='put', request_body=CategorySerializer, responses={200: CategorySerializer()})
-@api_view(['PUT'])
-@permission_classes([permissions.AllowAny])
-def update_category(request, category_id):
-    try:
-        category = Category.objects.get(id=category_id)
-        serializer = CategorySerializer(category, data=request.data, partial=True)
+@login_required
+def update_category(request, category_id=None):
+    """
+    Renderiza a página de edição de uma categoria existente.
+    """
+    category = get_object_or_404(Category, pk=category_id)
+
+    if request.method == 'POST':
+        serializer = CategorySerializer(category, data=request.POST, partial=True)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    except ObjectDoesNotExist:
-        return Response({"error": "Category not found."}, status=status.HTTP_404_NOT_FOUND)
+            return redirect('categories')
+    else:
+        serializer = CategorySerializer(category)
+
+    return render(request, 'main/categories/edit.html', {
+        'category': category,
+        'serializer': serializer,
+        'isLoggedIn': request.user.is_authenticated,
+    })
 
 @swagger_auto_schema(method='delete', responses={204: 'No Content'})
 @api_view(['DELETE'])
@@ -90,3 +98,38 @@ def delete_category(request, category_id):
     except ObjectDoesNotExist:
         return Response({"error": "Category not found."}, status=status.HTTP_404_NOT_FOUND)
     
+@login_required
+def create_category_page(request):
+    if request.method == 'POST':
+        serializer = CategorySerializer(data=request.POST)
+        
+        if serializer.is_valid():
+            serializer.save()
+            # Adiciona a mensagem de sucesso
+            messages.success(request, 'Categoria criada com sucesso!')
+            return redirect('categories')  # Redireciona para a lista de categorias
+        else:
+            # Renderiza novamente o formulário com os erros
+            return render(request, 'main/categories/add.html', {
+                'isLoggedIn': request.user.is_authenticated,
+                'errors': serializer.errors
+            })
+
+    # Exibe o formulário vazio no método GET
+    return render(request, 'main/categories/add.html', {
+        'isLoggedIn': request.user.is_authenticated
+    })
+    
+@login_required
+def delete_category_post(request, category_id):
+    if request.method == 'POST':
+        try:
+            category = get_object_or_404(Category, id=category_id)
+            category.delete()
+            messages.success(request, "Categoria deletada com sucesso!")
+        except ObjectDoesNotExist:
+            messages.error(request, "Categoria não encontrada.")
+        
+        return redirect('categories')
+    else:
+        return redirect('categories')

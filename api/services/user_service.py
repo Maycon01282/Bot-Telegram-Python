@@ -23,6 +23,16 @@ class UserService:
         except ObjectDoesNotExist:
             return None
 
+    def get_user_by_id(self, user_id: int):
+        """
+        Retorna um usuário pelo ID ou None se não for encontrado.
+        """
+        try:
+            user = User.objects.get(id=user_id)
+            return {"id": user.id, "name": user.name, "email": user.email}
+        except User.DoesNotExist:
+            return None
+
     def list_users(self, page: int = 1, page_size: int = 10) -> dict:
         users = User.objects.all()
         paginator = Paginator(users, page_size)

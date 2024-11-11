@@ -42,4 +42,17 @@ class OrderSerializer(serializers.ModelSerializer):
 class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
-        fields = '__all__'
+        fields = ['name', 'description', 'price', 'photo', 'category']  # Include 'photo' field
+
+    def validate_price(self, value):
+        """Verifica se o preço é um valor positivo."""
+        if value <= 0:
+            raise serializers.ValidationError("O preço deve ser um valor positivo.")
+        return value
+    def update(self, instance, validated_data):
+        # Verifica se `photo` está nos dados validados
+        if 'photo' not in validated_data:
+            # Mantém a imagem existente se `photo` não estiver presente
+            validated_data.pop('photo', None)
+        
+        return super().update(instance, validated_data)
