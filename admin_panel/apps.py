@@ -4,7 +4,7 @@ class YourAppConfig(AppConfig):
     name = 'your_app_name'
 
     def ready(self):
-        import admin_panel.signals
+        pass
 
 class AdminPanelConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'

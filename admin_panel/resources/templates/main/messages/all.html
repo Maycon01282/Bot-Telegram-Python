@@ -4,7 +4,22 @@
 {% block content %}
   <h1>Messages list</h1>
 
+  <!-- Exibir apenas a mensagem temporária do Django, caso exista -->
+  {% if messages %}
+    <div>
+      {% for message in messages %}
+        <div class="alert {% if message.tags %}alert-{{ message.tags }}{% else %}alert-info{% endif %}" role="alert">
+          {{ message }}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
   {% include 'common/table.html' with name="messages" %}  
+
+  <div class="text-center mb-4">
+    <a class="btn btn-sm btn-info" href="{% url 'create_message' %}">Add message</a>
+  </div>
 
   {% block table %}
   <table id="messages" class="table table-striped table-bordered" cellspacing="0" width="100%">
@@ -17,13 +32,13 @@
       </tr>
     </thead>
     <tbody>
-      {% for message in messages %}
+      {% for message in all_messages %}  <!-- Usar 'all_messages' para dados do banco -->
         <tr>
           <td>{{ message.id }}</td>
           <td>{{ message.description|default:'' }}</td>
           <td>{{ message.text }}</td>
           <td>
-            <a class="btn btn-xs btn-info command-edit" href="{% url 'messages_edit' message.id %}">
+            <a class="btn btn-xs btn-info command-edit" href="{% url 'update_message' message.id %}">
               <i class="fa fa-pencil" aria-hidden="true"></i>
             </a>
           </td>
