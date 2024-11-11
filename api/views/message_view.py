@@ -3,14 +3,13 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from drf_yasg.utils import swagger_auto_schema
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
-from django.shortcuts import get_object_or_404, render
-from api.models.message_model import Message
-from api.serializers.serializers import MessageSerializer
+from django.shortcuts import get_object_or_404, redirect, render
+from django.contrib import messages
+from django.db import IntegrityError
 from django.contrib.auth.decorators import login_required
 
-@login_required
-def message(request):
-    return render(request, 'main/broadcasts/add.html')
+from api.models.message_model import Message
+from api.serializers.serializers import MessageSerializer
 
 @swagger_auto_schema(method='get', responses={200: MessageSerializer(many=True)})
 @api_view(['GET'])
@@ -71,3 +70,71 @@ def delete_message_view(request, pk):
     message = get_object_or_404(Message, id=pk)
     message.delete()
     return Response({"message": "Message deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+
+@login_required
+def list_messages(request):
+    all_messages = Message.objects.all()
+    return render(request, 'main/messages/all.html', {
+        'all_messages': all_messages
+    })
+
+@login_required
+def create_message(request):
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        content = request.POST.get('content')
+
+        if title and content:
+            try:
+                Message.objects.create(name=title, description=title, text=content)
+                messages.success(request, 'Message created successfully!')
+                return redirect('messages')
+            except IntegrityError:
+                errors = {'title': 'A message with this title already exists.'}
+                return render(request, 'main/messages/add.html', {
+                    'errors': errors,
+                    'isLoggedIn': request.user.is_authenticated
+                })
+        else:
+            errors = {}
+            if not title:
+                errors['title'] = 'Title is required.'
+            if not content:
+                errors['content'] = 'Content is required.'
+            return render(request, 'main/messages/add.html', {
+                'errors': errors,
+                'isLoggedIn': request.user.is_authenticated
+            })
+
+    return render(request, 'main/messages/add.html', {
+        'isLoggedIn': request.user.is_authenticated,
+        'errors': {}
+    })
+
+@login_required
+def update_message_page(request, pk):
+    message = get_object_or_404(Message, pk=pk)
+
+    if request.method == 'POST':
+        # Atualize o objeto 'message' com os dados do formulário
+        serializer = MessageSerializer(message, data=request.POST, partial=True)
+        
+        if serializer.is_valid():
+            serializer.save()
+            messages.success(request, 'Message updated successfully!')
+            return redirect('messages')  # Redirecione para a lista de mensagens
+        else:
+            # Exiba mensagens de erro específicas, se houver
+            return render(request, 'main/messages/edit.html', {
+                'message': message,
+                'isLoggedIn': request.user.is_authenticated,
+                'messageNameError': serializer.errors.get('name'),
+                'messageDescriptionError': serializer.errors.get('description'),
+                'messageTextError': serializer.errors.get('text'),
+            })
+
+    # Renderize o formulário de edição no caso de uma requisição GET
+    return render(request, 'main/messages/edit.html', {
+        'message': message,
+        'isLoggedIn': request.user.is_authenticated
+    })

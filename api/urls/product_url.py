@@ -18,7 +18,7 @@ urlpatterns = [
     path('create/api', create_product_view, name='create_product_api'),
     path('create/', create_product, name='create_product'),
     path('update/<int:pk>/', edit_product, name='edit_product'),
-    path('api/update/<int:pk>/', update_product_view, name='update_product_api'),
+    path('update/<int:pk>/api/', update_product_view, name='update_product_api'),
     path('delete/<int:pk>/', delete_product, name='delete_product'),
     path('<int:pk>/', get_product_view, name='get_product'),
 ]
