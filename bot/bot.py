@@ -147,7 +147,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         await start(update, context)
 
 def main() -> None:
-    application = ApplicationBuilder().token("YOUR_BOT_TOKEN").build()
+    application = ApplicationBuilder().token("BOT_TOKEN").build()
 
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("status", verificar_status))  # Adicionando comando para verificar status
