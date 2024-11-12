@@ -1,25 +1,36 @@
-FROM python:3.11-slim
+# Use a imagem oficial do Python como base
+FROM python:3.10-slim
 
-ENV PYTHONUNBUFFERED=1
+# Instala as dependências necessárias para o mysqlclient
+RUN apt-get update && apt-get install -y \
+    gcc \
+    default-libmysqlclient-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-# Create and set the working directory
-WORKDIR /webapps/chat-bot-telegram
+# Define o diretório de trabalho no contêiner
+WORKDIR /app
 
-# Install dependencies
-RUN apt-get update && apt-get upgrade -y && apt-get install -y \
-    libsqlite3-dev \
-    default-mysql-client \
-    && rm -rf /var/lib/apt/lists/*  # Clean up the apt cache to reduce image size
-
-# Copy requirements.txt and install Python dependencies
+# Copia o arquivo requirements.txt para instalar as dependências
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the application code
+# Desabilita a verificação SSL temporariamente para instalar as dependências
+RUN pip install --no-cache-dir --trusted-host pypi.org --trusted-host files.pythonhosted.org -U certifi
+
+# Instala as dependências listadas em requirements.txt
+RUN pip install --no-cache-dir --trusted-host pypi.org --trusted-host files.pythonhosted.org -r requirements.txt
+
+# Copia o restante do código da aplicação
 COPY . .
 
-# Expose the port the app runs on
+# Adicione esta linha no seu Dockerfile do python-bot, após as instruções de atualização do sistema
+RUN apt-get update && apt-get install -y netcat-openbsd
+
+# Copia o script wait-for-it.sh
+COPY wait-for-it.sh /app/wait-for-it.sh
+RUN chmod +x /app/wait-for-it.sh
+
+# Expõe a porta 8000 (ajuste conforme a porta usada pelo seu app)
 EXPOSE 8000
 
-# Command to run the application
-CMD ["python", "bot_script.py"]
+# Define o comando para iniciar o aplicativo
+CMD ["sh", "-c", "./wait-for-it.sh db:3306 -t 30 -- python manage.py runserver 0.0.0.0:8000"]
