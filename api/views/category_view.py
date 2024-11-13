@@ -5,7 +5,8 @@ from rest_framework import status, permissions
 from rest_framework.response import Response
 from drf_yasg.utils import swagger_auto_schema
 from api.models.category_model import Category
-from api.serializers.serializers import CategorySerializer
+from api.serializers.serializers import CategorySerializer, ProductSerializer
+from api.models.product_model import Product
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.core.exceptions import ObjectDoesNotExist
 from api.models.user_model import User
@@ -133,3 +134,15 @@ def delete_category_post(request, category_id):
         return redirect('categories')
     else:
         return redirect('categories')
+    
+@swagger_auto_schema(method='get', responses={200: ProductSerializer(many=True)})
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def list_products_by_category_view(request, category_id):
+    category = get_object_or_404(Category, pk=category_id)
+    products = Product.objects.filter(category=category)
+    serializer = ProductSerializer(products, many=True)
+    return Response({
+        "category": category.name,
+        "products": serializer.data
+    }, status=status.HTTP_200_OK)

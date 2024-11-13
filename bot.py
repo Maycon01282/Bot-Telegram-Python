@@ -1,184 +1,301 @@
 import logging
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, CallbackQueryHandler
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, InputFile
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, CallbackQueryHandler, MessageHandler, filters
 from dotenv import load_dotenv
 import os
 import requests
+import qrcode
+from io import BytesIO
+import emoji
 
-# Configuração do logging
+# Bot states definition
+EMAIL_VALIDATION = range(1)
+NEW_CUSTOMER = range(2)
+CUSTOMER_REGISTRATION = range(3)
+PAYMENT_METHOD = range(4)
+ORDER_CONFIRMATION = range(5)
+
+# Logging configuration
 logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',  # Corrigido 'levellevel' para 'levelname'
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
 )
 logger = logging.getLogger(__name__)
 
-# Carregar variáveis de ambiente do arquivo .env
+# Load environment variables from .env file
 load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 if not BOT_TOKEN:
-    logger.error("O token do bot não foi encontrado. Verifique o arquivo .env.")
+    logger.error("Bot token not found. Check the .env file.")
 else:
-    logger.info(f"Token do bot carregado: {BOT_TOKEN}")
+    logger.info(f"Bot token loaded: {BOT_TOKEN}")
+
+# Function to calculate the total value of the cart
+def calculate_total_value(cart):
+    total = 0
+    for prod_id in cart:
+        response = requests.get(f'http://localhost:8000/products/{prod_id}/')
+        product = response.json()
+        total += product['price']
+    return total
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    logger.info("Comando /start recebido")
+    context.user_data['cart'] = []
+    context.user_data['payment_method'] = None
+    
     keyboard = [
-        [InlineKeyboardButton("Categorias de Produtos", callback_data="categorias"),
-         InlineKeyboardButton("Clientes", callback_data="clientes")],
+        [InlineKeyboardButton("Categories", callback_data='categories')],
+        [InlineKeyboardButton("Cart", callback_data='cart')]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text('Escolha uma opção:', reply_markup=reply_markup)
+    await update.message.reply_text(
+        emoji.emojize(
+            'Welcome to our shopping bot! :shopping_cart: Choose an option:\n'
+            '1. Click "Categories" to see the products. :package:\n'
+            '2. Click "Cart" to see the added items. :shopping_bags:\n'
+            '3. After adding products to the cart, complete the purchase by choosing the payment method. :credit_card:',
+            use_aliases=True
+        ),
+        reply_markup=reply_markup
+    )
 
-async def list_categories(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    logger.info("Listando categorias")
-    api_url = "http://localhost:8000/categories/list/"
-    response = requests.get(api_url)
-    if response.status_code == 200:
-        data = response.json()
-        categories = data.get("categories", [])
-        keyboard = [
-            [InlineKeyboardButton(category["name"], callback_data=f"categoria_{category['id']}")] 
-            for category in categories
-        ]
-        keyboard.append([InlineKeyboardButton("Voltar", callback_data="voltar")])
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        message = update.message or update.callback_query.message
-        await message.reply_text("Escolha uma categoria de produto:", reply_markup=reply_markup)
-    else:
-        message = update.message or update.callback_query.message
-        await message.reply_text("Erro ao buscar categorias.")
-
-async def listar_produtos(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    logger.info("Listando produtos")
-    categoria_id = int(update.callback_query.data.split("_")[1])  # Extrai o ID da categoria
-    api_url = f"http://localhost:8000/api/products/list_by_category/?category_id={categoria_id}"
-    logger.info(f"URL da API: {api_url}")
-    response = requests.get(api_url)
-    
-    if response.status_code == 200:
-        produtos = response.json()
-        logger.info(f"Produtos recebidos: {produtos}")
-        keyboard = [
-            [InlineKeyboardButton(produto["nome"], callback_data=f"produto_{produto['id']}")]
-            for produto in produtos
-        ]
-        keyboard.append([InlineKeyboardButton("Voltar", callback_data="voltar")])
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        await update.callback_query.edit_message_text("Escolha um produto:", reply_markup=reply_markup)
-    else:
-        logger.error(f"Erro ao buscar produtos: {response.status_code} - {response.text}")
-        await update.callback_query.edit_message_text("Erro ao buscar produtos.")
-
-async def listar_clientes(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    logger.info("Listando clientes")
-    response = requests.get("http://localhost:8000/api/clientes/")
-    if response.status_code == 200:
-        clientes = response.json()
-        keyboard = [
-            [InlineKeyboardButton(cliente["nome"], callback_data=f"cliente_{cliente['id']}")]
-            for cliente in clientes
-        ]
-        keyboard.append([InlineKeyboardButton("Voltar", callback_data="voltar")])
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        message = update.message or update.callback_query.message
-        await message.reply_text("Escolha um cliente:", reply_markup=reply_markup)
-    else:
-        message = update.message or update.callback_query.message
-        await message.reply_text("Erro ao buscar clientes.")
-
-async def registrar_pedido(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    logger.info("Registrando pedido")
-    cliente_id = int(update.callback_query.data.split("_")[1])  # Extrai o ID do cliente
-    produtos_selecionados = context.user_data.get('produtos', [])
-    
-    if not produtos_selecionados:
-        await update.callback_query.edit_message_text("Você não selecionou nenhum produto.")
-        return
-    
-    pedido_data = {
-        "cliente_id": cliente_id,
-        "produtos": [{"id": produto_id} for produto_id in produtos_selecionados],
-    }
-    response = requests.post("http://localhost:8000/api/pedidos/", json=pedido_data)
-    if response.status_code == 201:
-        pedido = response.json()
-        context.user_data['pedido_id'] = pedido['id']  # Armazena o ID do pedido
-        await update.callback_query.edit_message_text(f"Pedido realizado com sucesso! Seu ID de pedido é {pedido['id']}.")
-        context.user_data['produtos'] = []  # Limpa os produtos selecionados
-    else:
-        await update.callback_query.edit_message_text("Erro ao realizar o pedido.")
-
-async def verificar_status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    logger.info("Verificando status do pedido")
-    pedido_id = context.user_data.get('pedido_id')
-    
-    if not pedido_id:
-        await update.message.reply_text("Você ainda não fez um pedido.")
-        return
-    
-    response = requests.get(f"http://localhost:8000/api/pedidos/{pedido_id}/status/")
-    if response.status_code == 200:
-        status = response.json()['status']
-        await update.message.reply_text(f"O status do seu pedido é: {status}")
-    else:
-        await update.message.reply_text("Erro ao verificar o status do pedido.")
-
-async def atualizar_status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    logger.info("Atualizando status do pedido")
-    pedido_id = context.user_data.get('pedido_id')
-    
-    if not pedido_id:
-        await update.message.reply_text("Você ainda não fez um pedido.")
-        return
-    
-    novo_status = context.args[0] if context.args else "Em preparo"  # Padrão "Em preparo"
-    
-    # Envia a atualização do status para a API
-    response = requests.post(f"http://localhost:8000/api/pedidos/{pedido_id}/status/", json={"status": novo_status})
-    
-    if response.status_code == 200:
-        await update.message.reply_text(f"Status do pedido {pedido_id} atualizado para: {novo_status}")
-    else:
-        await update.message.reply_text("Erro ao atualizar o status do pedido.")
-
-async def adicionar_produto(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    logger.info("Adicionando produto ao pedido")
-    produto_id = int(update.callback_query.data.split("_")[1])  # Extrai o ID do produto
-    produtos_selecionados = context.user_data.get('produtos', [])
-    produtos_selecionados.append(produto_id)
-    context.user_data['produtos'] = produtos_selecionados
-    await update.callback_query.edit_message_text(f"Produto {produto_id} adicionado ao pedido.")
-
-async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def categories(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
     await query.answer()
-    logger.info(f"Botão pressionado: {query.data}")
-    if query.data == "categorias":
-        await list_categories(update, context)
-    elif query.data.startswith("categoria_"):
-        await listar_produtos(update, context)
-    elif query.data == "clientes":
-        await listar_clientes(update, context)
-    elif query.data.startswith("cliente_"):
-        await registrar_pedido(update, context)
-    elif query.data.startswith("produto_"):
-        await adicionar_produto(update, context)
-    elif query.data == "voltar":
-        await query.edit_message_text("Voltar ao menu principal.")
-        await start(update, context)
+    
+    # Fetch categories from API
+    response = requests.get('http://localhost:8000/categories/list/')
+    categories = response.json()
+    
+    keyboard = [[InlineKeyboardButton(cat['name'], callback_data=f"category_{cat['id']}")] for cat in categories]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await query.edit_message_text(text=emoji.emojize("Choose a category: :package:", use_aliases=True), reply_markup=reply_markup)
+
+async def category(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    query = update.callback_query
+    await query.answer()
+    
+    category_id = query.data.split('_')[1]
+    
+    # Fetch products from API
+    response = requests.get(f'http://localhost:8000/categories/{category_id}/products/')
+    products = response.json()
+    
+    keyboard = [[InlineKeyboardButton(prod['name'], callback_data=f"product_{prod['id']}")] for prod in products]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await query.edit_message_text(text=emoji.emojize("Choose a product: :shopping_bags:", use_aliases=True), reply_markup=reply_markup)
+
+async def product(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    query = update.callback_query
+    await query.answer()
+    
+    product_id = query.data.split('_')[1]
+    
+    # Fetch product details from API
+    response = requests.get(f'http://localhost:8000/products/{product_id}/')
+    product = response.json()
+    
+    keyboard = [
+        [InlineKeyboardButton("Add to cart", callback_data=f"add_to_cart_{product_id}")],
+        [InlineKeyboardButton("Back", callback_data='categories')]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await query.edit_message_text(
+        text=emoji.emojize(
+            f"Product details:\n\n{product['name']}\n{product['description']}\nPrice: {product['price']} :moneybag:",
+            use_aliases=True
+        ),
+        reply_markup=reply_markup
+    )
+
+async def add_to_cart(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    query = update.callback_query
+    await query.answer()
+    
+    product_id = query.data.split('_')[2]
+    context.user_data['cart'].append(product_id)
+    
+    await query.edit_message_text(text=emoji.emojize("Product added to cart! :white_check_mark:", use_aliases=True))
+
+async def cart(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    query = update.callback_query
+    await query.answer()
+    
+    cart = context.user_data.get('cart', [])
+    if not cart:
+        await query.edit_message_text(text=emoji.emojize("Your cart is empty. :shopping_cart:", use_aliases=True))
+        return
+    
+    # Fetch product details for items in cart
+    products = [requests.get(f'http://localhost:8000/products/{prod_id}/').json() for prod_id in cart]
+    
+    cart_text = "\n".join([f"{prod['name']} - {prod['price']}" for prod in products])
+    keyboard = [[InlineKeyboardButton("Checkout", callback_data='checkout')]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await query.edit_message_text(text=emoji.emojize(f"Your cart:\n\n{cart_text} :shopping_cart:", use_aliases=True), reply_markup=reply_markup)
+
+async def checkout(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    query = update.callback_query
+    await query.answer()
+    
+    keyboard = [
+        [InlineKeyboardButton("Yes", callback_data='existing_customer')],
+        [InlineKeyboardButton("No", callback_data='new_customer')]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await query.edit_message_text(text=emoji.emojize("Are you already our customer? :bust_in_silhouette:", use_aliases=True), reply_markup=reply_markup)
+
+async def existing_customer(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    query = update.callback_query
+    await query.answer()
+    
+    await query.edit_message_text(text=emoji.emojize("Please provide your email for validation: :email:", use_aliases=True))
+
+    return EMAIL_VALIDATION
+
+async def email_validation(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    email = update.message.text
+    
+    # Provide feedback while validating email
+    await update.message.reply_text(emoji.emojize("Validating your email... :hourglass_flowing_sand:", use_aliases=True))
+    
+    # Validate email with API
+    response = requests.get(f'http://localhost:8000/clients/?email={email}')
+    if response.status_code == 200 and response.json():
+        await update.message.reply_text(emoji.emojize("Email successfully validated! :white_check_mark: Please choose the payment method:", use_aliases=True))
+        return PAYMENT_METHOD
+    else:
+        await update.message.reply_text(emoji.emojize("Email not found. :x: Please register.", use_aliases=True))
+        return NEW_CUSTOMER
+
+async def new_customer(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await update.message.reply_text(emoji.emojize("Please provide your details for registration (Name, Email, Phone): :memo:", use_aliases=True))
+    return CUSTOMER_REGISTRATION
+
+async def customer_registration(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    customer_data = update.message.text.split(',')
+    data = {
+        "name": customer_data[0].strip(),
+        "email": customer_data[1].strip(),
+        "phone": customer_data[2].strip()
+    }
+    
+    # Provide feedback while registering
+    await update.message.reply_text(emoji.emojize("Registering your details... :hourglass_flowing_sand:", use_aliases=True))
+    
+    # Register new customer with API
+    response = requests.post('http://localhost:8000/clients/create/', json=data)
+    if response.status_code == 201:
+        await update.message.reply_text(emoji.emojize("Registration successful! :white_check_mark: Please choose the payment method:", use_aliases=True))
+        return PAYMENT_METHOD
+    else:
+        await update.message.reply_text(emoji.emojize("Error during registration. :x: Please try again.", use_aliases=True))
+        return NEW_CUSTOMER
+
+async def payment_method(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    query = update.callback_query
+    await query.answer()
+    
+    keyboard = [
+        [InlineKeyboardButton("Pix", callback_data='pix')],
+        [InlineKeyboardButton("Pay on delivery", callback_data='pay_on_delivery')]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await query.edit_message_text(emoji.emojize("Choose the payment method: :credit_card:", use_aliases=True), reply_markup=reply_markup)
+
+async def pix_payment(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    query = update.callback_query
+    await query.answer()
+    
+    context.user_data['payment_method'] = 'pix'
+    
+    # Calculate the total value of the cart
+    total = calculate_total_value(context.user_data['cart'])
+    
+    # Generate the QR Code for Pix payment
+    pix_data = f"00020126360014BR.GOV.BCB.PIX0114+5511999999995204000053039865404{total:.2f}5802BR5925Receiver Name6009SAO PAULO61080540900062070503***6304"
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=10,
+        border=4,
+    )
+    qr.add_data(pix_data)
+    qr.make(fit=True)
+    
+    img = qr.make_image(fill='black', back_color='white')
+    bio = BytesIO()
+    bio.name = 'pix_qrcode.png'
+    img.save(bio, 'PNG')
+    bio.seek(0)
+    
+    await query.message.reply_photo(photo=InputFile(bio), caption=emoji.emojize(f"Use the QR Code below to pay R$ {total:.2f} via Pix. :money_with_wings:", use_aliases=True))
+    await confirm_order(update, context)
+
+async def pay_on_delivery(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    query = update.callback_query
+    await query.answer()
+    
+    context.user_data['payment_method'] = 'pay_on_delivery'
+    await confirm_order(update, context)
+
+async def confirm_order(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    query = update.callback_query
+    await query.answer()
+    
+    # Confirm order details before sending to API
+    total = calculate_total_value(context.user_data['cart'])
+    payment_method = context.user_data['payment_method']
+    keyboard = [
+        [InlineKeyboardButton("Confirm", callback_data='finalize_order')],
+        [InlineKeyboardButton("Cancel", callback_data='cancel_order')]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await query.edit_message_text(emoji.emojize(f"Please confirm your order:\n\nTotal: R$ {total:.2f} :moneybag:\nPayment Method: {payment_method}", use_aliases=True), reply_markup=reply_markup)
+
+async def finalize_order(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    query = update.callback_query
+    await query.answer()
+    
+    # Provide feedback while creating order
+    await query.edit_message_text(emoji.emojize("Creating your order... :hourglass_flowing_sand:", use_aliases=True))
+    
+    # Create order with API
+    total = calculate_total_value(context.user_data['cart'])
+    data = {
+        "payment_method": context.user_data['payment_method'],
+        "products": context.user_data['cart'],
+        "amount": total
+    }
+    response = requests.post('http://localhost:8000/orders/create/', json=data)
+    if response.status_code == 201:
+        await query.edit_message_text(emoji.emojize("Your order has been confirmed! :white_check_mark: Track the status of your order through our system.", use_aliases=True))
+        context.user_data['cart'].clear()  # Clear the cart after order confirmation
+    else:
+        await query.edit_message_text(emoji.emojize(f"Error confirming order: {response.json().get('detail', 'Unknown error')} :x:. Please try again.", use_aliases=True))
+
+async def cancel_order(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    query = update.callback_query
+    await query.answer()
+    await query.edit_message_text(emoji.emojize("Your order has been cancelled. :x:", use_aliases=True))
 
 def main() -> None:
-    logger.info("Iniciando o bot")
     application = ApplicationBuilder().token(BOT_TOKEN).build()
-
+    
     application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("status", verificar_status))  # Adicionando comando para verificar status
-    application.add_handler(CommandHandler("atualizar_status", atualizar_status))  # Adicionando comando para atualizar status
-    application.add_handler(CallbackQueryHandler(button))
-
-    logger.info("Bot iniciado")
+    application.add_handler(CallbackQueryHandler(existing_customer, pattern='^existing_customer$'))
+    application.add_handler(CallbackQueryHandler(new_customer, pattern='^new_customer$'))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, email_validation))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, customer_registration))
+    application.add_handler(CallbackQueryHandler(payment_method, pattern='^payment_method$'))
+    application.add_handler(CallbackQueryHandler(pix_payment, pattern='^pix$'))
+    application.add_handler(CallbackQueryHandler(pay_on_delivery, pattern='^pay_on_delivery$'))
+    application.add_handler(CallbackQueryHandler(confirm_order, pattern='^confirm_order$'))
+    application.add_handler(CallbackQueryHandler(finalize_order, pattern='^finalize_order$'))
+    application.add_handler(CallbackQueryHandler(cancel_order, pattern='^cancel_order$'))
+    
     application.run_polling()
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

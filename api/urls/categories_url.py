@@ -7,7 +7,8 @@ from api.views.category_view import (
     delete_category,
     categories,
     create_category_page,
-    delete_category_post
+    delete_category_post,
+    list_products_by_category_view
 )
 
 urlpatterns = [
@@ -18,4 +19,5 @@ urlpatterns = [
     path('create/', create_category_page, name='create_category'),
     path('update/<int:category_id>/', update_category, name='update_category'),
     path('delete/<int:category_id>/', delete_category_post, name='delete_category_post'),
+    path('categories/<int:category_id>/products/', list_products_by_category_view, name='list_products_by_category')
 ]
