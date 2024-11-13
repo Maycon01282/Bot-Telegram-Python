@@ -1,13 +1,13 @@
 services:
   db:
     image: mysql:8.0
-    container_name: mysql
+    container_name: mysql-db
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: telegrambot
     volumes:
       - mysql-data:/var/lib/mysql
-
+      
   python-bot:
     container_name: python-bot
     build: .

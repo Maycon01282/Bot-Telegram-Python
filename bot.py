@@ -1,12 +1,37 @@
-import requests
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, CallbackQueryHandler
+import logging
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, CallbackQueryHandler
+from dotenv import load_dotenv
 import os
 import requests
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.ext import ContextTypes
+
+# Configuração do logging
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',  # Corrigido 'levellevel' para 'levelname'
+    level=logging.INFO
+)
+logger = logging.getLogger(__name__)
+
+# Carregar variáveis de ambiente do arquivo .env
+load_dotenv()
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+
+if not BOT_TOKEN:
+    logger.error("O token do bot não foi encontrado. Verifique o arquivo .env.")
+else:
+    logger.info(f"Token do bot carregado: {BOT_TOKEN}")
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    logger.info("Comando /start recebido")
+    keyboard = [
+        [InlineKeyboardButton("Categorias de Produtos", callback_data="categorias"),
+         InlineKeyboardButton("Clientes", callback_data="clientes")],
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.message.reply_text('Escolha uma opção:', reply_markup=reply_markup)
 
 async def list_categories(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    logger.info("Listando categorias")
     api_url = "http://localhost:8000/categories/list/"
     response = requests.get(api_url)
     if response.status_code == 200:
@@ -18,17 +43,22 @@ async def list_categories(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         ]
         keyboard.append([InlineKeyboardButton("Voltar", callback_data="voltar")])
         reply_markup = InlineKeyboardMarkup(keyboard)
-        await update.message.reply_text("Escolha uma categoria de produto:", reply_markup=reply_markup)
+        message = update.message or update.callback_query.message
+        await message.reply_text("Escolha uma categoria de produto:", reply_markup=reply_markup)
     else:
-        await update.message.reply_text("Erro ao buscar categorias.")
+        message = update.message or update.callback_query.message
+        await message.reply_text("Erro ao buscar categorias.")
 
-# Função para listar produtos dentro de uma categoria
 async def listar_produtos(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    logger.info("Listando produtos")
     categoria_id = int(update.callback_query.data.split("_")[1])  # Extrai o ID da categoria
-    response = requests.get(f"http://localhost:8000/api/products/list_by_category/?category_id={categoria_id}")
+    api_url = f"http://localhost:8000/api/products/list_by_category/?category_id={categoria_id}"
+    logger.info(f"URL da API: {api_url}")
+    response = requests.get(api_url)
     
     if response.status_code == 200:
         produtos = response.json()
+        logger.info(f"Produtos recebidos: {produtos}")
         keyboard = [
             [InlineKeyboardButton(produto["nome"], callback_data=f"produto_{produto['id']}")]
             for produto in produtos
@@ -37,10 +67,11 @@ async def listar_produtos(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         reply_markup = InlineKeyboardMarkup(keyboard)
         await update.callback_query.edit_message_text("Escolha um produto:", reply_markup=reply_markup)
     else:
+        logger.error(f"Erro ao buscar produtos: {response.status_code} - {response.text}")
         await update.callback_query.edit_message_text("Erro ao buscar produtos.")
 
-# Função para listar clientes
 async def listar_clientes(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    logger.info("Listando clientes")
     response = requests.get("http://localhost:8000/api/clientes/")
     if response.status_code == 200:
         clientes = response.json()
@@ -50,12 +81,14 @@ async def listar_clientes(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         ]
         keyboard.append([InlineKeyboardButton("Voltar", callback_data="voltar")])
         reply_markup = InlineKeyboardMarkup(keyboard)
-        await update.message.reply_text("Escolha um cliente:", reply_markup=reply_markup)
+        message = update.message or update.callback_query.message
+        await message.reply_text("Escolha um cliente:", reply_markup=reply_markup)
     else:
-        await update.message.reply_text("Erro ao buscar clientes.")
+        message = update.message or update.callback_query.message
+        await message.reply_text("Erro ao buscar clientes.")
 
-# Função para registrar um pedido com produtos e cliente
 async def registrar_pedido(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    logger.info("Registrando pedido")
     cliente_id = int(update.callback_query.data.split("_")[1])  # Extrai o ID do cliente
     produtos_selecionados = context.user_data.get('produtos', [])
     
@@ -67,7 +100,6 @@ async def registrar_pedido(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         "cliente_id": cliente_id,
         "produtos": [{"id": produto_id} for produto_id in produtos_selecionados],
     }
-
     response = requests.post("http://localhost:8000/api/pedidos/", json=pedido_data)
     if response.status_code == 201:
         pedido = response.json()
@@ -77,8 +109,8 @@ async def registrar_pedido(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     else:
         await update.callback_query.edit_message_text("Erro ao realizar o pedido.")
 
-# Função para verificar o status do pedido
 async def verificar_status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    logger.info("Verificando status do pedido")
     pedido_id = context.user_data.get('pedido_id')
     
     if not pedido_id:
@@ -92,8 +124,8 @@ async def verificar_status(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     else:
         await update.message.reply_text("Erro ao verificar o status do pedido.")
 
-# Função para atualizar o status do pedido (para o restaurante fazer isso)
 async def atualizar_status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    logger.info("Atualizando status do pedido")
     pedido_id = context.user_data.get('pedido_id')
     
     if not pedido_id:
@@ -110,28 +142,18 @@ async def atualizar_status(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     else:
         await update.message.reply_text("Erro ao atualizar o status do pedido.")
 
-# Função para começar o bot e mostrar opções
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    keyboard = [
-        [InlineKeyboardButton("Categorias de Produtos", callback_data="categorias"),
-         InlineKeyboardButton("Clientes", callback_data="clientes")],
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text('Escolha uma opção:', reply_markup=reply_markup)
-
-# Função para adicionar produto ao pedido
 async def adicionar_produto(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    logger.info("Adicionando produto ao pedido")
     produto_id = int(update.callback_query.data.split("_")[1])  # Extrai o ID do produto
     produtos_selecionados = context.user_data.get('produtos', [])
     produtos_selecionados.append(produto_id)
     context.user_data['produtos'] = produtos_selecionados
     await update.callback_query.edit_message_text(f"Produto {produto_id} adicionado ao pedido.")
 
-# Função para lidar com botões
 async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
     await query.answer()
-
+    logger.info(f"Botão pressionado: {query.data}")
     if query.data == "categorias":
         await list_categories(update, context)
     elif query.data.startswith("categoria_"):
@@ -147,13 +169,15 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         await start(update, context)
 
 def main() -> None:
-    application = ApplicationBuilder().token("BOT_TOKEN").build()
+    logger.info("Iniciando o bot")
+    application = ApplicationBuilder().token(BOT_TOKEN).build()
 
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("status", verificar_status))  # Adicionando comando para verificar status
     application.add_handler(CommandHandler("atualizar_status", atualizar_status))  # Adicionando comando para atualizar status
     application.add_handler(CallbackQueryHandler(button))
 
+    logger.info("Bot iniciado")
     application.run_polling()
 
 if __name__ == "__main__":

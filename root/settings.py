@@ -94,6 +94,9 @@ DATABASES = {
     }
 }
 
+# Bot token for Telegram
+BOT_TOKEN = os.getenv('BOT_TOKEN')
+
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
 
@@ -146,8 +149,6 @@ AUTH_USER_MODEL = 'api.User'
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
-
-BOT_TOKEN =  '7347774913:AAHD1yjTgZiGF6wnfm-4acfVwh6fnA3szp8'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
