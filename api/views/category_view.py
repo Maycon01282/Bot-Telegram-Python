@@ -137,7 +137,7 @@ def delete_category_post(request, category_id):
     
 @swagger_auto_schema(method='get', responses={200: ProductSerializer(many=True)})
 @api_view(['GET'])
-@permission_classes([permissions.IsAuthenticated])
+##@permission_classes([permissions.IsAuthenticated])
 def list_products_by_category_view(request, category_id):
     category = get_object_or_404(Category, pk=category_id)
     products = Product.objects.filter(category=category)
