@@ -20,5 +20,93 @@ services:
     env_file:
       - .env
 
+  jaeger-api:
+    image: jaegertracing/opentelemetry-all-in-one
+    container_name: jaeger-api
+    ports:
+      - 16686:16686
+    depends_on:
+      - collector-api
+
+  collector-api:
+    image: otel/opentelemetry-collector-contrib:0.91.0
+    container_name: collector-api
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    command: ['--config=/etc/otel-collector-config.yaml']
+    ports:
+      - 4317:4317
+      - 4318:4318
+      - 8889:8889
+
+  prometheus:
+    container_name: prometheus
+    image: prom/prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --enable-feature=exemplar-storage
+      - --web.enable-remote-write-receiver
+    restart: always
+    ports:
+      - '9090:9090'
+    depends_on:
+      - collector-api
+
+  grafana:
+    container_name: grafana
+    image: grafana/grafana
+    volumes:
+      - ./grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
+    restart: always
+    ports:
+      - '3000:3000'
+    depends_on:
+      - prometheus
+
+  sonarqube-db:
+    image: postgres:13-alpine
+    container_name: sonarqube-db
+    environment:
+      POSTGRES_USER: sonarqube
+      POSTGRES_PASSWORD: sonarqube
+      POSTGRES_DB: sonarqube
+    volumes:
+      - sonarqube-postgresql-data:/var/lib/postgresql/data
+
+  sonarqube:
+    image: sonarqube:latest
+    container_name: sonarqube
+    depends_on:
+      - sonarqube-db
+    environment:
+      SONAR_JDBC_URL: jdbc:postgresql://sonarqube-db:5432/sonarqube
+      SONAR_JDBC_USERNAME: sonarqube
+      SONAR_JDBC_PASSWORD: sonarqube
+    ports:
+      - '9000:9000'
+    volumes:
+      - sonarqube-conf:/opt/sonarqube/conf
+      - sonarqube-data:/opt/sonarqube/data
+      - sonarqube-logs:/opt/sonarqube/logs
+      - sonarqube-extensions:/opt/sonarqube/extensions
+
+  sonar-scanner:
+    image: sonarsource/sonar-scanner-cli:latest
+    depends_on:
+      - sonarqube
+    environment:
+      SONAR_HOST_URL: http://sonarqube:9000
+      SONAR_TOKEN: sqp_0cd3e64111cac5c4fb06bcdf6fc3845e12b8f713
+    volumes:
+      - .:/usr/src
+      - ./sonar-project.properties:/opt/sonar-scanner/conf/sonar-scanner.properties
+
 volumes:
   mysql-data:
+  sonarqube-postgresql-data:
+  sonarqube-conf:
+  sonarqube-data:
+  sonarqube-logs:
+  sonarqube-extensions:
