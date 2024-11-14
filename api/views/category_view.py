@@ -83,16 +83,6 @@ def update_category(request, category_id=None):
         'serializer': serializer,
         'isLoggedIn': request.user.is_authenticated,
     })
-
-@swagger_auto_schema(method='delete', responses={204: 'No Content'})
-@api_view(['DELETE'])
-def delete_category(request, category_id):
-    try:
-        category = Category.objects.get(id=category_id)
-        category.delete()
-        return Response({"message": "Category deleted."}, status=status.HTTP_204_NO_CONTENT)
-    except ObjectDoesNotExist:
-        return Response({"error": "Category not found."}, status=status.HTTP_404_NOT_FOUND)
     
 @login_required
 @swagger_auto_schema(method='post', request_body=CategorySerializer, responses={201: CategorySerializer()})
@@ -124,7 +114,6 @@ def delete_category_post(request, category_id):
             messages.success(request, "Category deleted successfully!")
         except ObjectDoesNotExist:
             messages.error(request, "Category not found.")
-        
         return redirect('categories')
     else:
         return redirect('categories')

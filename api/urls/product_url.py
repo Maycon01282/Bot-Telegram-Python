@@ -1,4 +1,3 @@
-# api/urls/product_url.py
 from django.urls import path
 from api.views.product_view import (
     list_products_view,

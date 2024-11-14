@@ -4,7 +4,6 @@ from api.views.category_view import (
     get_category_by_id,
     create_category,
     update_category,
-    delete_category,
     categories,
     create_category_page,
     delete_category_post,
