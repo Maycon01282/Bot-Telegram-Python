@@ -1,3 +1,4 @@
+
 from django.contrib.auth import authenticate, login
 
 def authenticate_user(request, username, password):

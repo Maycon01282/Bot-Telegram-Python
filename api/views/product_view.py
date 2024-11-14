@@ -1,5 +1,5 @@
 from rest_framework import status, permissions
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from drf_yasg.utils import swagger_auto_schema
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
@@ -11,6 +11,8 @@ from django.contrib import messages
 from api.models.category_model import Category
 
 @login_required
+@swagger_auto_schema(method='get', responses={200: ProductSerializer(many=True)})
+@api_view(['GET'])
 def products(request):
     list_products_view = Product.objects.all()
     return render(request, 'main/products/all.html', {
@@ -19,7 +21,6 @@ def products(request):
 
 @swagger_auto_schema(method='get', responses={200: ProductSerializer(many=True)})
 @api_view(['GET'])
-@permission_classes([permissions.IsAuthenticated])
 def list_products_view(request):
     page = int(request.GET.get('page', 1))
     page_size = int(request.GET.get('page_size', 10))
@@ -42,7 +43,6 @@ def list_products_view(request):
 
 @swagger_auto_schema(method='get', responses={200: ProductSerializer()})
 @api_view(['GET'])
-@permission_classes([permissions.IsAuthenticated])
 def get_product_view(pk=None):
     product = get_object_or_404(Product, pk=pk)
     serializer = ProductSerializer(product)
@@ -50,7 +50,6 @@ def get_product_view(pk=None):
 
 @swagger_auto_schema(method='post', request_body=ProductSerializer, responses={201: ProductSerializer()})
 @api_view(['POST'])
-@permission_classes([permissions.IsAuthenticated])
 def create_product_view(request):
     serializer = ProductSerializer(data=request.data)
     if serializer.is_valid():
@@ -60,7 +59,6 @@ def create_product_view(request):
 
 @swagger_auto_schema(method='put', request_body=ProductSerializer, responses={200: ProductSerializer()})
 @api_view(['PUT'])
-@permission_classes([permissions.IsAuthenticated])
 def update_product_view(request, pk=None):
     product = get_object_or_404(Product, pk=pk)
     data = request.data.copy()
@@ -73,13 +71,14 @@ def update_product_view(request, pk=None):
 
 @swagger_auto_schema(method='delete', responses={204: 'No Content'})
 @api_view(['DELETE'])
-@permission_classes([permissions.IsAuthenticated])
 def delete_product_view(pk=None):
     product = get_object_or_404(Product, pk=pk)
     product.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
 
 @login_required
+@swagger_auto_schema(method='post', request_body=ProductSerializer, responses={201: ProductSerializer()})
+@api_view(['POST'])
 def create_product(request):
     if request.method == 'POST':
         data = request.POST.copy()
@@ -87,10 +86,10 @@ def create_product(request):
         serializer = ProductSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
-            messages.success(request, 'Produto criado com sucesso!')
+            messages.success(request, 'Product created successfully!')
             return redirect('products')
         else:
-            messages.error(request, 'Erro ao criar o produto. Verifique os dados e tente novamente.')
+            messages.error(request, 'Error creating product. Please check the data and try again.')
             return render(request, 'main/products/add.html', {
                 'isLoggedIn': request.user.is_authenticated,
                 'errors': serializer.errors,
@@ -100,22 +99,24 @@ def create_product(request):
         'isLoggedIn': request.user.is_authenticated,
         'categories': Category.objects.all()
     })
-    
+
 @login_required
+@swagger_auto_schema(method='put', request_body=ProductSerializer, responses={200: ProductSerializer()})
+@api_view(['PUT'])
 def edit_product(request, pk):
     product = get_object_or_404(Product, pk=pk)
-    if request.method == 'POST':
-        data = request.POST.copy()
+    if request.method == 'PUT':
+        data = request.data.copy()
         data.update(request.FILES)
         if 'photo' not in request.FILES:
             data['photo'] = product.photo
         serializer = ProductSerializer(product, data=data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            messages.success(request, 'Produto atualizado com sucesso!')
+            messages.success(request, 'Product updated successfully!')
             return redirect('products')
         else:
-            messages.error(request, 'Erro ao atualizar o produto. Verifique os dados e tente novamente.')
+            messages.error(request, 'Error updating product. Please check the data and try again.')
             return render(request, 'main/products/edit.html', {
                 'product': product,
                 'isLoggedIn': request.user.is_authenticated,
@@ -129,10 +130,12 @@ def edit_product(request, pk):
     })
 
 @login_required
+@swagger_auto_schema(method='delete', responses={204: 'No Content'})
+@api_view(['DELETE'])
 def delete_product(request, pk):
     product = get_object_or_404(Product, pk=pk)
-    if request.method == 'POST':
+    if request.method == 'DELETE':
         product.delete()
-        messages.success(request, 'Produto excluído com sucesso!')
+        messages.success(request, 'Product deleted successfully!')
         return redirect('products')
     return render(request, 'main/products/confirm_delete.html', {'product': product})

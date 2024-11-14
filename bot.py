@@ -39,19 +39,12 @@ else:
 
 # Function to centralize HTTP requests with error handling
 def fetch_data(endpoint):
-    url = f"{API_BASE_URL}/{endpoint}"
-    headers = {
-        'Authorization': f'Token {BOT_TOKEN}'
-    }
-    logger.info(f"Fetching data from {url}")
     try:
-        response = requests.get(url, headers=headers)
+        response = requests.get(f"{API_BASE_URL}/{endpoint}")
         response.raise_for_status()
-        data = response.json()
-        logger.info(f"Data fetched: {data}")
-        return data
+        return response.json()
     except requests.RequestException as e:
-        logger.error(f"Error fetching data: {e}")
+        logger.error(f"Failed to fetch data from {endpoint}: {e}")
         return None
 
 # Function to build dynamic option keyboards
@@ -78,6 +71,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             '1. Click "Categories" to see the products. :package:\n'
             '2. Click "Cart" to see the added items. :shopping_bags:\n'
             '3. After adding products to the cart, complete the purchase by choosing the payment method. :credit_card:',
+            use_aliases=True
         ),
         reply_markup=keyboard
     )
@@ -85,41 +79,35 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 async def categories(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
     await query.answer()
-
-    logger.info("Fetching categories")
-    response = fetch_data(f'categories/list/')
-    logger.info(f"Categories response: {response}")  # Adicione este log para verificar a resposta
-
-    if not response or 'categories' not in response:
-        logger.error("Unable to load categories")
+    
+    # Fetch categories from API
+    categories = fetch_data('categories/list/')
+    if not categories:
         await query.edit_message_text(text="Unable to load categories.")
         return
 
-    categories = response['categories']
     keyboard = generate_keyboard([(cat['name'], f"category_{cat['id']}") for cat in categories])
-    await query.edit_message_text(text=emoji.emojize("Choose a category: :package:"), reply_markup=keyboard)
+    await query.edit_message_text(text=emoji.emojize("Choose a category: :package:", use_aliases=True), reply_markup=keyboard)
 
 async def category(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
     await query.answer()
     
     category_id = query.data.split('_')[1]
-    response = fetch_data(f'categories/{category_id}/products/')
-    if not response or 'products' not in response:
+    products = fetch_data(f'categories/{category_id}/products/')
+    if not products:
         await query.edit_message_text(text="Unable to load products.")
         return
 
-    products = response['products']
-    # Use 'name' as a fallback if 'id' is not present
-    keyboard = generate_keyboard([(prod['name'], f"product_{prod.get('id', prod['name'])}") for prod in products])
-    await query.edit_message_text(text=emoji.emojize("Choose a product: :shopping_bags:"), reply_markup=keyboard)
+    keyboard = generate_keyboard([(prod['name'], f"product_{prod['id']}") for prod in products])
+    await query.edit_message_text(text=emoji.emojize("Choose a product: :shopping_bags:", use_aliases=True), reply_markup=keyboard)
 
 async def product(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
     await query.answer()
     
     product_id = query.data.split('_')[1]
-    product = fetch_data(f'products/<int:pk>/')
+    product = fetch_data(f'products/{product_id}/')
     if not product:
         await query.edit_message_text(text="Unable to load product details.")
         return
@@ -128,6 +116,7 @@ async def product(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await query.edit_message_text(
         text=emoji.emojize(
             f"Product details:\n\n{product['name']}\n{product['description']}\nPrice: {product['price']} :moneybag:",
+            use_aliases=True
         ),
         reply_markup=keyboard
     )
@@ -139,7 +128,7 @@ async def add_to_cart(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     product_id = query.data.split('_')[2]
     context.user_data['cart'].append(product_id)
     
-    await query.edit_message_text(text=emoji.emojize("Product added to cart! :white_check_mark:"))
+    await query.edit_message_text(text=emoji.emojize("Product added to cart! :white_check_mark:", use_aliases=True))
 
 async def cart(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
@@ -147,7 +136,7 @@ async def cart(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     
     cart = context.user_data.get('cart', [])
     if not cart:
-        await query.edit_message_text(text=emoji.emojize("Your cart is empty. :shopping_cart:"))
+        await query.edit_message_text(text=emoji.emojize("Your cart is empty. :shopping_cart:", use_aliases=True))
         return
 
     products = [fetch_data(f'products/{prod_id}/') for prod_id in cart]
@@ -155,7 +144,7 @@ async def cart(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     
     cart_text = "\n".join([f"{prod['name']} - {prod['price']}" for prod in products])
     keyboard = generate_keyboard([("Checkout", 'checkout')])
-    await query.edit_message_text(text=emoji.emojize(f"Your cart:\n\n{cart_text} :shopping_cart:"), reply_markup=keyboard)
+    await query.edit_message_text(text=emoji.emojize(f"Your cart:\n\n{cart_text} :shopping_cart:", use_aliases=True), reply_markup=keyboard)
 
 async def checkout(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
@@ -164,7 +153,7 @@ async def checkout(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     total = calculate_total_value(context.user_data['cart'])
     keyboard = generate_keyboard([("Generate QR Code", "generate_qr"), ("Back to Cart", "cart")])
     await query.edit_message_text(
-        text=emoji.emojize(f"Total amount: {total} :moneybag: \nChoose a payment method:"),
+        text=emoji.emojize(f"Total amount: {total} :moneybag: \nChoose a payment method:", use_aliases=True),
         reply_markup=keyboard
     )
 
@@ -190,14 +179,14 @@ async def confirm_order(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     total = calculate_total_value(context.user_data['cart'])
     payment_method = context.user_data['payment_method']
     keyboard = generate_keyboard([("Confirm", "finalize_order"), ("Cancel", "cancel_order")])
-    await query.edit_message_text(emoji.emojize(f"Please confirm your order:\n\nTotal: R$ {total:.2f} :moneybag:\nPayment Method: {payment_method}"), reply_markup=keyboard)
+    await query.edit_message_text(emoji.emojize(f"Please confirm your order:\n\nTotal: R$ {total:.2f} :moneybag:\nPayment Method: {payment_method}", use_aliases=True), reply_markup=keyboard)
 
 async def finalize_order(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
     await query.answer()
     
     # Provide feedback while creating order
-    await query.edit_message_text(emoji.emojize("Creating your order... :hourglass_flowing_sand:"))
+    await query.edit_message_text(emoji.emojize("Creating your order... :hourglass_flowing_sand:", use_aliases=True))
     
     # Create order with API
     total = calculate_total_value(context.user_data['cart'])
@@ -208,21 +197,21 @@ async def finalize_order(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     }
     response = requests.post(f'{API_BASE_URL}/orders/create/', json=data)
     if response.status_code == 201:
-        await query.edit_message_text(emoji.emojize("Your order has been confirmed! :white_check_mark: Track the status of your order through our system."))
+        await query.edit_message_text(emoji.emojize("Your order has been confirmed! :white_check_mark: Track the status of your order through our system.", use_aliases=True))
         context.user_data['cart'].clear()  # Clear the cart after order confirmation
     else:
-        await query.edit_message_text(emoji.emojize(f"Error confirming order: {response.json().get('detail', 'Unknown error')} :x:. Please try again."))
+        await query.edit_message_text(emoji.emojize(f"Error confirming order: {response.json().get('detail', 'Unknown error')} :x:. Please try again.", use_aliases=True))
 
 async def cancel_order(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
     await query.answer()
-    await query.edit_message_text(emoji.emojize("Your order has been cancelled. :x:"))
+    await query.edit_message_text(emoji.emojize("Your order has been cancelled. :x:", use_aliases=True))
 
 async def existing_customer(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
     await query.answer()
     
-    await query.edit_message_text(text=emoji.emojize("Please provide your email for validation: :email:"))
+    await query.edit_message_text(text=emoji.emojize("Please provide your email for validation: :email:", use_aliases=True))
 
     return EMAIL_VALIDATION
 
@@ -230,19 +219,19 @@ async def email_validation(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     email = update.message.text
     
     # Provide feedback while validating email
-    await update.message.reply_text(emoji.emojize("Validating your email... :hourglass_flowing_sand:"))
+    await update.message.reply_text(emoji.emojize("Validating your email... :hourglass_flowing_sand:", use_aliases=True))
     
     # Validate email with API
     response = requests.get(f'{API_BASE_URL}/clients/?email={email}')
     if response.status_code == 200 and response.json():
-        await update.message.reply_text(emoji.emojize("Email successfully validated! :white_check_mark: Please choose the payment method:"))
+        await update.message.reply_text(emoji.emojize("Email successfully validated! :white_check_mark: Please choose the payment method:", use_aliases=True))
         return PAYMENT_METHOD
     else:
-        await update.message.reply_text(emoji.emojize("Email not found. :x: Please register."))
+        await update.message.reply_text(emoji.emojize("Email not found. :x: Please register.", use_aliases=True))
         return NEW_CUSTOMER
 
 async def new_customer(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.message.reply_text(emoji.emojize("Please provide your details for registration (Name, Email, Phone): :memo:"))
+    await update.message.reply_text(emoji.emojize("Please provide your details for registration (Name, Email, Phone): :memo:", use_aliases=True))
     return CUSTOMER_REGISTRATION
 
 async def customer_registration(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -254,15 +243,15 @@ async def customer_registration(update: Update, context: ContextTypes.DEFAULT_TY
     }
     
     # Provide feedback while registering
-    await update.message.reply_text(emoji.emojize("Registering your details... :hourglass_flowing_sand:"))
+    await update.message.reply_text(emoji.emojize("Registering your details... :hourglass_flowing_sand:", use_aliases=True))
     
     # Register new customer with API
     response = requests.post(f'{API_BASE_URL}/clients/create/', json=data)
     if response.status_code == 201:
-        await update.message.reply_text(emoji.emojize("Registration successful! :white_check_mark: Please choose the payment method:"))
+        await update.message.reply_text(emoji.emojize("Registration successful! :white_check_mark: Please choose the payment method:", use_aliases=True))
         return PAYMENT_METHOD
     else:
-        await update.message.reply_text(emoji.emojize("Error during registration. :x: Please try again."))
+        await update.message.reply_text(emoji.emojize("Error during registration. :x: Please try again.", use_aliases=True))
         return NEW_CUSTOMER
 
 async def payment_method(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -274,7 +263,7 @@ async def payment_method(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         [InlineKeyboardButton("Pay on delivery", callback_data='pay_on_delivery')]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    await query.edit_message_text(emoji.emojize("Choose the payment method: :credit_card:"), reply_markup=reply_markup)
+    await query.edit_message_text(emoji.emojize("Choose the payment method: :credit_card:", use_aliases=True), reply_markup=reply_markup)
 
 async def pix_payment(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
@@ -302,7 +291,7 @@ async def pix_payment(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     img.save(bio, 'PNG')
     bio.seek(0)
     
-    await query.message.reply_photo(photo=InputFile(bio), caption=emoji.emojize(f"Use the QR Code below to pay R$ {total:.2f} via Pix. :money_with_wings:"))
+    await query.message.reply_photo(photo=InputFile(bio), caption=emoji.emojize(f"Use the QR Code below to pay R$ {total:.2f} via Pix. :money_with_wings:", use_aliases=True))
     await confirm_order(update, context)
 
 async def pay_on_delivery(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -320,14 +309,14 @@ async def confirm_order(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     total = calculate_total_value(context.user_data['cart'])
     payment_method = context.user_data['payment_method']
     keyboard = generate_keyboard([("Confirm", "finalize_order"), ("Cancel", "cancel_order")])
-    await query.edit_message_text(emoji.emojize(f"Please confirm your order:\n\nTotal: R$ {total:.2f} :moneybag:\nPayment Method: {payment_method}"), reply_markup=keyboard)
+    await query.edit_message_text(emoji.emojize(f"Please confirm your order:\n\nTotal: R$ {total:.2f} :moneybag:\nPayment Method: {payment_method}", use_aliases=True), reply_markup=keyboard)
 
 async def finalize_order(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
     await query.answer()
     
     # Provide feedback while creating order
-    await query.edit_message_text(emoji.emojize("Creating your order... :hourglass_flowing_sand:"))
+    await query.edit_message_text(emoji.emojize("Creating your order... :hourglass_flowing_sand:", use_aliases=True))
     
     # Create order with API
     total = calculate_total_value(context.user_data['cart'])
@@ -338,23 +327,18 @@ async def finalize_order(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     }
     response = requests.post(f'{API_BASE_URL}/orders/create/', json=data)
     if response.status_code == 201:
-        await query.edit_message_text(emoji.emojize("Your order has been confirmed! :white_check_mark: Track the status of your order through our system."))
+        await query.edit_message_text(emoji.emojize("Your order has been confirmed! :white_check_mark: Track the status of your order through our system.", use_aliases=True))
         context.user_data['cart'].clear()  # Clear the cart after order confirmation
     else:
-        await query.edit_message_text(emoji.emojize(f"Error confirming order: {response.json().get('detail', 'Unknown error')} :x:. Please try again."))
+        await query.edit_message_text(emoji.emojize(f"Error confirming order: {response.json().get('detail', 'Unknown error')} :x:. Please try again.", use_aliases=True))
 
 async def cancel_order(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
     await query.answer()
-    await query.edit_message_text(emoji.emojize("Your order has been cancelled. :x:"))
+    await query.edit_message_text(emoji.emojize("Your order has been cancelled. :x:", use_aliases=True))
 
 def setup_handlers(application):
     # Handlers for callback queries
-    application.add_handler(CommandHandler('start', start))
-    application.add_handler(CallbackQueryHandler(categories, pattern='^categories$'))
-    application.add_handler(CallbackQueryHandler(category, pattern='^category_'))
-    application.add_handler(CallbackQueryHandler(product, pattern='^product_'))
-    application.add_handler(CallbackQueryHandler(generate_qr, pattern='^generate_qr$'))
     application.add_handler(CallbackQueryHandler(add_to_cart, pattern='^add_to_cart_'))
     application.add_handler(CallbackQueryHandler(cart, pattern='^cart$'))
     application.add_handler(CallbackQueryHandler(checkout, pattern='^checkout$'))
