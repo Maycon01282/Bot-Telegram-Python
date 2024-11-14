@@ -136,13 +136,3 @@ def delete_product(request, pk):
         messages.success(request, 'Produto excluído com sucesso!')
         return redirect('products')
     return render(request, 'main/products/confirm_delete.html', {'product': product})
-
-@login_required
-def list_products_by_category(request, category_id):
-    category = get_object_or_404(Category, id=category_id)
-    products = Product.objects.filter(category=category)
-    return render(request, 'main/products/by_category.html', {
-        'category': category,
-        'products': products,
-        'isLoggedIn': request.user.is_authenticated
-    })

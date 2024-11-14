@@ -36,13 +36,15 @@ def edit_order_view(request, pk=None):
     else:
         serializer = OrderSerializer(order)
 
-    # Passa as opções de status para o contexto
+    # Passa as opções de status e métodos de pagamento para o contexto
     status_choices = Order.Status.choices
+    payment_method_choices = Order.PaymentMethod.choices
 
     return render(request, 'main/orders/edit.html', {
         'order': order,
         'serializer': serializer,
         'status_choices': status_choices,  # Opções de status disponíveis
+        'payment_method_choices': payment_method_choices,  # Opções de métodos de pagamento disponíveis
         'isLoggedIn': request.user.is_authenticated,
     })
 
