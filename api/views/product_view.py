@@ -43,7 +43,7 @@ def list_products_view(request):
 
 @swagger_auto_schema(method='get', responses={200: ProductSerializer()})
 @api_view(['GET'])
-def get_product_view(pk=None):
+def get_product_view(request, pk):
     product = get_object_or_404(Product, pk=pk)
     serializer = ProductSerializer(product)
     return Response(serializer.data)

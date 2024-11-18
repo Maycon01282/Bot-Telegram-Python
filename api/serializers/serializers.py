@@ -42,8 +42,8 @@ class OrderSerializer(serializers.ModelSerializer):
 class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
-        fields = ['name', 'description', 'price', 'photo', 'category']  # Include 'photo' field
-
+        fields = ['id', 'name', 'description', 'price', 'photo', 'category']
+        
     def validate_price(self, value):
         """Verifica se o preço é um valor positivo."""
         if value <= 0:
