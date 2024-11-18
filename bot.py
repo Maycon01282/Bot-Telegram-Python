@@ -306,11 +306,15 @@ async def cart(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 async def checkout(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
     await query.answer()
-    total = calculate_total_value(context.user_data['cart'])
-    keyboard = generate_keyboard([("Generate QR Code", "generate_qr"), ("Back to Cart", "cart")])
+    
+    keyboard = [
+        [InlineKeyboardButton("Existing Customer", callback_data='existing_customer')],
+        [InlineKeyboardButton("New Customer", callback_data='new_customer')]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
     await query.edit_message_text(
-        text=emoji.emojize(f"Total amount: {total} :moneybag: \nChoose a payment method:"),
-        reply_markup=keyboard
+        text=emoji.emojize("Are you an existing customer or a new customer?"),
+        reply_markup=reply_markup
     )
 
 async def generate_qr(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -396,7 +400,7 @@ async def payment_method(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     await query.answer()
     
     keyboard = [
-        [InlineKeyboardButton("Pix", callback_data='pix')],
+        [InlineKeyboardButton("Pix", callback_data='pix_payment')],
         [InlineKeyboardButton("Pay on delivery", callback_data='pay_on_delivery')]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
