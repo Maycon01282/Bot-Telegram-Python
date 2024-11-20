@@ -2,7 +2,7 @@ from django.urls import path
 from api.views.user_view import (
     create_user_view,
     update_user_view,
-    delete_user_view,
+    delete_user,
     get_user_view,
     list_users_view,
     register,
@@ -20,5 +20,5 @@ urlpatterns = [
     path('create/', create_user_page, name='create_user_page'),
     path('update/<int:pk>/api', update_user_view, name='update_user'),
     path('update/<int:pk>/', update_user_page, name='update_user_page'),
-    path('delete/<int:pk>/', delete_user_view, name='delete_user'),
+    path('delete/<int:pk>/', delete_user, name='delete_user'),
 ]
