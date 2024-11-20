@@ -108,10 +108,21 @@ def update_client_view(request, pk):
         print("Validation errors:", serializer.errors)
         return JsonResponse(serializer.errors, status=400)
     
-    
 @swagger_auto_schema(method='delete', responses={204: 'No Content'})
 @api_view(['DELETE'])
 def delete_client_view(request, pk):
     client = get_object_or_404(Client, id=pk)
     client.delete()
     return Response({"message": "Client deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+
+@swagger_auto_schema(method='get', responses={200: ClientSerializer()})
+@api_view(['GET'])
+def validate_email(request):
+    email = request.GET.get('email')
+    if email:
+        client = Client.objects.filter(email=email).first()
+        if client:
+            return JsonResponse({'status': 'success', 'message': 'Email found'})
+        else:
+            return JsonResponse({'status': 'error', 'message': 'Email not found'})
+    return JsonResponse({'status': 'error', 'message': 'Invalid request'})

@@ -5,7 +5,8 @@ from api.views.client_view import (
     create_client_view,
     update_client_view, 
     delete_client_view, 
-    clients, client_edit_page
+    clients, client_edit_page,
+    validate_email
 )
 
 urlpatterns = [
@@ -16,4 +17,6 @@ urlpatterns = [
     path('update/<int:client_id>/', client_edit_page, name='edit_client'),
     path('update/<int:pk>/', update_client_view, name='update_client'),
     path('delete/<int:client_id>/', delete_client_view, name='delete_client'),
+    path('validate_email/', validate_email, name='validate_email'),
+
 ]
