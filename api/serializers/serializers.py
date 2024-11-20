@@ -50,9 +50,7 @@ class ProductSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("O preço deve ser um valor positivo.")
         return value
     def update(self, instance, validated_data):
-        # Verifica se `photo` está nos dados validados
         if 'photo' not in validated_data:
-            # Mantém a imagem existente se `photo` não estiver presente
             validated_data.pop('photo', None)
         
         return super().update(instance, validated_data)
