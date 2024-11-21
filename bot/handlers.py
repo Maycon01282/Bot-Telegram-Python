@@ -2,6 +2,7 @@ import logging
 import os
 import emoji
 import requests
+import aiohttp
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, InputFile
 from telegram.ext import CallbackQueryHandler, MessageHandler, filters, ContextTypes, CommandHandler, ConversationHandler
 from bot.pixqrcodegen import Payload
@@ -185,14 +186,15 @@ async def cart(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     # Fetch product details for each item in the cart
     products = []
-    for item in cart:
-        product_id = item['product_id']
-        quantity = item['quantity']
-        response = requests.get(f'{API_BASE_URL}/products/{product_id}/', params={'quantity': quantity})
-        if response.status_code == 200:
-            products.append(response.json())
-        else:
-            logging.error(f"Error fetching product data: {response.status_code} - {response.text}")
+    async with aiohttp.ClientSession() as session:
+        for item in cart:
+            product_id = item['product_id']
+            quantity = item['quantity']
+            async with session.get(f'{API_BASE_URL}/products/{product_id}/', params={'quantity': quantity}) as response:
+                if response.status == 200:
+                    products.append(await response.json())
+                else:
+                    logging.error(f"Error fetching product data: {response.status} - {await response.text()}")
 
     # Generate cart text
     cart_text = "\n".join([f"{prod['name']} - {prod['price']} (Quantity: {item['quantity']})" for prod, item in zip(products, cart)])
@@ -274,44 +276,28 @@ async def finalize_order(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     context.user_data['cart'].clear()
 
 async def create_order(order_data):
-    response = requests.post(f'{API_BASE_URL}/orders/create/', json=order_data)
-    logging.info(f"Order creation response status code: {response.status_code}")
-    logging.info(f"Order creation response content: {response.content}")
-    if response.status_code == 201:
-        return response.json().get('id')
-    else:
-        logging.error(f"Error creating order: {response.status_code} - {response.content}")
-        return None
+    async with aiohttp.ClientSession() as session:
+        async with session.post(f'{API_BASE_URL}/orders/create/', json=order_data) as response:
+            logging.info(f"Order creation response status code: {response.status}")
+            response_content = await response.text()
+            logging.info(f"Order creation response content: {response_content}")
+            if response.status == 201:
+                return (await response.json()).get('id')
+            else:
+                logging.error(f"Error creating order: {response.status} - {response_content}")
+                return None
 
 async def create_order_item(order_item_data):
-    response = requests.post(f'{API_BASE_URL}/order_items/create/', json=order_item_data)
-    logging.info(f"Order item creation response status code: {response.status_code}")
-    logging.info(f"Order item creation response content: {response.content}")
-    if response.status_code == 201:
-        return True
-    else:
-        logging.error(f"Error creating order item: {response.status_code} - {response.content}")
-        return False
-
-async def create_order(order_data):
-    response = requests.post(f'{API_BASE_URL}/orders/create/', json=order_data)
-    logging.info(f"Order creation response status code: {response.status_code}")
-    logging.info(f"Order creation response content: {response.content}")
-    if response.status_code == 201:
-        return response.json().get('id')
-    else:
-        logging.error(f"Error creating order: {response.status_code} - {response.content}")
-        return None
-
-async def create_order_item(order_item_data):
-    response = requests.post(f'{API_BASE_URL}/order_items/create/', json=order_item_data)
-    logging.info(f"Order item creation response status code: {response.status_code}")
-    logging.info(f"Order item creation response content: {response.content}")
-    if response.status_code == 201:
-        return True
-    else:
-        logging.error(f"Error creating order item: {response.status_code} - {response.content}")
-        return False
+    async with aiohttp.ClientSession() as session:
+        async with session.post(f'{API_BASE_URL}/order_items/create/', json=order_item_data) as response:
+            logging.info(f"Order item creation response status code: {response.status}")
+            response_content = await response.text()
+            logging.info(f"Order item creation response content: {response_content}")
+            if response.status == 201:
+                return True
+            else:
+                logging.error(f"Error creating order item: {response.status} - {response_content}")
+                return False
 
 async def existing_customer(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle the existing customer callback query."""
