@@ -45,7 +45,8 @@ async def categories(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     categories = response['categories']
     logger.info(f"Fetched categories: {categories}")
     keyboard = generate_keyboard([(cat['name'], f"category_{cat['id']}") for cat in categories])
-    await query.edit_message_text(text="Choose a category:", reply_markup=keyboard)
+    keyboard.append([InlineKeyboardButton("Back to Start", callback_data="start")])
+    await query.edit_message_text(text="Choose a category:", reply_markup=InlineKeyboardMarkup(keyboard))
 
 async def add_to_cart(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
@@ -84,7 +85,8 @@ async def add_to_cart(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         # Ask the user if they want to add more products or go to the cart
         keyboard = [
             [InlineKeyboardButton("Add more products", callback_data="categories")],
-            [InlineKeyboardButton("Go to cart", callback_data="cart")]
+            [InlineKeyboardButton("Go to cart", callback_data="cart")],
+            [InlineKeyboardButton("Back to Start", callback_data="start")]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         await context.bot.send_message(
@@ -131,10 +133,11 @@ async def category(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         keyboard = generate_keyboard([
             (prod['name'], f"product_{prod['id']}") for prod in products
         ])
+        keyboard.append([InlineKeyboardButton("Back to Start", callback_data="start")])
         
         await query.edit_message_text(
             text="Choose a product:",
-            reply_markup=keyboard
+            reply_markup=InlineKeyboardMarkup(keyboard)
         )
 
     except ValueError as ve:
@@ -164,13 +167,14 @@ async def product(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         return
     
     keyboard = generate_keyboard([("Add to cart", f"add_to_cart_{product_id}"), ("Back", 'categories')])
+    keyboard.append([InlineKeyboardButton("Back to Start", callback_data="start")])
     await context.bot.send_photo(
         chat_id=update.effective_chat.id,
         photo=open(photo_path, 'rb'),
         caption=(
             f"Product details:\n\n{product['name']}\n{product['description']}\nPrice: {product['price']}"
         ),
-        reply_markup=keyboard
+        reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
 async def cart(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -196,7 +200,8 @@ async def cart(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     # Generate cart text
     cart_text = "\n".join([f"{prod['name']} - {prod['price']} (Quantity: {item['quantity']})" for prod, item in zip(products, cart)])
     keyboard = generate_keyboard([("Checkout", 'checkout')])
-    await query.edit_message_text(text=f"Your cart:\n\n{cart_text}", reply_markup=keyboard)
+    keyboard.append([InlineKeyboardButton("Back to Start", callback_data="start")])
+    await query.edit_message_text(text=f"Your cart:\n\n{cart_text}", reply_markup=InlineKeyboardMarkup(keyboard))
 
 async def checkout(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle the checkout callback query."""
@@ -205,7 +210,8 @@ async def checkout(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     
     keyboard = [
         [InlineKeyboardButton("Existing Customer", callback_data='existing_customer')],
-        [InlineKeyboardButton("New Customer", callback_data='new_customer')]
+        [InlineKeyboardButton("New Customer", callback_data='new_customer')],
+        [InlineKeyboardButton("Back to Start", callback_data="start")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     await query.edit_message_text(
@@ -264,10 +270,7 @@ async def finalize_order(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             "product": product_id,
             "quantity": quantity
         }
-        logging.info(f"Order item data: {order_item_data}")
-        if not await create_order_item(order_item_data):
-            await query.edit_message_text("Error creating order item: Unable to create order item. Please try again.")
-            return
+        await create_order_item(order_item_data)
 
     await query.edit_message_text("Your order has been confirmed! Track the status of your order through our system.")
     context.user_data['cart'].clear()
@@ -327,7 +330,8 @@ async def email_validation(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 
                 keyboard = [
                     [InlineKeyboardButton("Pix", callback_data='pix_payment')],
-                    [InlineKeyboardButton("Pay on delivery", callback_data='pay_on_delivery')]
+                    [InlineKeyboardButton("Pay on delivery", callback_data='pay_on_delivery')],
+                    [InlineKeyboardButton("Back to Start", callback_data="start")]
                 ]
                 reply_markup = InlineKeyboardMarkup(keyboard)
                 await update.message.reply_text("Choose the payment method:", reply_markup=reply_markup)
@@ -379,7 +383,8 @@ async def customer_registration(update: Update, context: ContextTypes.DEFAULT_TY
             await update.message.reply_text("Registration successful! Please choose the payment method:")
             keyboard = [
                 [InlineKeyboardButton("Pix", callback_data='pix_payment')],
-                [InlineKeyboardButton("Pay on delivery", callback_data='pay_on_delivery')]
+                [InlineKeyboardButton("Pay on delivery", callback_data='pay_on_delivery')],
+                [InlineKeyboardButton("Back to Start", callback_data="start")]
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)
             await update.message.reply_text("Choose the payment method:", reply_markup=reply_markup)
@@ -404,7 +409,8 @@ async def payment_method(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     
     keyboard = [
         [InlineKeyboardButton("Pix", callback_data='pix_payment')],
-        [InlineKeyboardButton("Pay on delivery", callback_data='pay_on_delivery')]
+        [InlineKeyboardButton("Pay on delivery", callback_data='pay_on_delivery')],
+        [InlineKeyboardButton("Back to Start", callback_data="start")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     logging.info("Displaying payment method options.")
@@ -480,6 +486,7 @@ async def confirm_order(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     keyboard = [
         [InlineKeyboardButton("Confirm Order", callback_data='confirm_order_final')],
         [InlineKeyboardButton("Cancel Order", callback_data='cancel_order')]
+        [InlineKeyboardButton("Back to Start", callback_data="start")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     await query.message.reply_text("Do you want to confirm your order?", reply_markup=reply_markup)
@@ -528,7 +535,6 @@ def setup_handlers(application):
             PAYMENT_METHOD: [CallbackQueryHandler(payment_method, pattern='^payment_method$')],
             PAYMENT_METHOD_CHOICE: [CallbackQueryHandler(payment_method_choice, pattern='^(pix_payment|pay_on_delivery)$')],
             ORDER_CONFIRMATION: [MessageHandler(filters.PHOTO, order_confirmation)],
-            # outros estados
         },
         fallbacks=[CommandHandler('cancel', cancel)],
         per_message=True  # Adicione esta linha para garantir que os handlers sejam rastreados para cada mensagem
