@@ -70,7 +70,7 @@ def delete_message_view(request, pk):
 @api_view(['GET'])
 def list_messages(request):
     all_messages = Message.objects.all()
-    return render(request, 'main/messages/all.html', {
+    return render(request, 'main/broadcasts/add.html', {
         'all_messages': all_messages
     })
 
@@ -88,7 +88,7 @@ def create_message(request):
                 return redirect('messages')
             except IntegrityError:
                 errors = {'title': 'A message with this title already exists.'}
-                return render(request, 'main/messages/add.html', {
+                return render(request, 'main/broadcasts/add.html', {
                     'errors': errors,
                     'isLoggedIn': request.user.is_authenticated
                 })
@@ -98,11 +98,11 @@ def create_message(request):
                 errors['title'] = 'Title is required.'
             if not content:
                 errors['content'] = 'Content is required.'
-            return render(request, 'main/messages/add.html', {
+            return render(request, 'main/broadcasts/add.html', {
                 'errors': errors,
                 'isLoggedIn': request.user.is_authenticated
             })
-    return render(request, 'main/messages/add.html', {
+    return render(request, 'main/broadcasts/add.html', {
         'isLoggedIn': request.user.is_authenticated,
         'errors': {}
     })
@@ -119,14 +119,14 @@ def update_message_page(request, pk):
             messages.success(request, 'Message updated successfully!')
             return redirect('messages')
         else:
-            return render(request, 'main/messages/edit.html', {
+            return render(request, 'main/broadcasts/add.html', {
                 'message': message,
                 'isLoggedIn': request.user.is_authenticated,
                 'messageNameError': serializer.errors.get('name'),
                 'messageDescriptionError': serializer.errors.get('description'),
                 'messageTextError': serializer.errors.get('text'),
             })
-    return render(request, 'main/messages/edit.html', {
+    return render(request, 'main/broadcasts/add.html', {
         'message': message,
         'isLoggedIn': request.user.is_authenticated
     })

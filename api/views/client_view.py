@@ -9,6 +9,7 @@ from api.models.client_model import Client
 from rest_framework.test import APIRequestFactory
 from api.serializers.serializers import ClientSerializer
 from django.http import JsonResponse
+from django.contrib import messages
 import json
 
 @swagger_auto_schema(method='get', responses={200: ClientSerializer(many=True)})
@@ -32,23 +33,23 @@ def list_clients_view(request):
         "has_next": clients_page.has_next(),
         "has_previous": clients_page.has_previous(),
     })
-    
+
 @login_required
-@swagger_auto_schema(method='put', request_body=ClientSerializer, responses={200: ClientSerializer()})
-@api_view(['PUT'])
 def client_edit_page(request, client_id):
     client = get_object_or_404(Client, id=client_id)
-    if request.method == 'PUT':
-        data = request.data.copy()
+    if request.method == 'POST':
+        data = request.POST.copy()
         if 'is_active' in data:
             data['is_active'] = data['is_active'] == 'True'
         serializer = ClientSerializer(client, data=data, partial=True)
         if serializer.is_valid():
             serializer.save()
             client.refresh_from_db()
+            messages.success(request, 'Client updated successfully!')
             return redirect('clients')
         else:
-            print("Validation errors:", serializer.errors)
+            messages.error(request, 'Failed to update client. Please correct the errors.')
+            print("Erros de validação:", serializer.errors)
     else:
         serializer = ClientSerializer(client)
     return render(request, 'main/clients/edit.html', {
@@ -107,7 +108,7 @@ def update_client_view(request, pk):
     else:
         print("Validation errors:", serializer.errors)
         return JsonResponse(serializer.errors, status=400)
-    
+
 @swagger_auto_schema(method='delete', responses={204: 'No Content'})
 @api_view(['DELETE'])
 def delete_client_view(request, pk):

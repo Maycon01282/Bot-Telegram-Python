@@ -6,7 +6,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, InputFi
 from telegram.ext import CallbackQueryHandler, MessageHandler, filters, ContextTypes, CommandHandler, ConversationHandler
 from bot.pixqrcodegen import Payload
 from bot.utils import *
-from bot.states import EMAIL_VALIDATION, NEW_CUSTOMER, CUSTOMER_REGISTRATION, PAYMENT_METHOD, ORDER_CONFIRMATION
+from bot.states import EMAIL_VALIDATION, NEW_CUSTOMER, CUSTOMER_REGISTRATION, PAYMENT_METHOD, ORDER_CONFIRMATION, PAYMENT_METHOD_CHOICE
 
 logger = logging.getLogger(__name__)
 
@@ -241,7 +241,7 @@ async def email_validation(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         if response.status_code == 200 and response.json().get('status') == 'success':
             logging.info("Email validation successful, transitioning to PAYMENT_METHOD state.")
             await update.message.reply_text(emoji.emojize("Email successfully validated! :white_check_mark: Please choose the payment method:"))
-            return PAYMENT_METHOD
+            return payment_method
         else:
             logging.info("Email validation failed, transitioning to CUSTOMER_REGISTRATION state.")
             await update.message.reply_text(emoji.emojize("Email not found. :x: Please provide your details for registration (Name, Email, Phone, City, Address): :memo:"))
@@ -294,6 +294,10 @@ async def customer_registration(update: Update, context: ContextTypes.DEFAULT_TY
 async def payment_method(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Handle the payment method callback query."""
     query = update.callback_query
+    if query is None:
+        logging.error("Callback query is None.")
+        return PAYMENT_METHOD
+    
     await query.answer()
     
     keyboard = [
@@ -309,8 +313,27 @@ async def payment_method(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     except Exception as e:
         logging.error(f"Error displaying payment method options: {e}")
     
-    return PAYMENT_METHOD
+    return PAYMENT_METHOD_CHOICE
 
+async def payment_method_choice(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Handle user selection of a payment method."""
+    query = update.callback_query
+    await query.answer()
+
+    if query.data == 'pix_payment':
+        await query.edit_message_text("You chose Pix. Proceeding to the next step.")
+        logging.info("Pix payment selected.")
+        return ORDER_CONFIRMATION  # Altere para o próximo estado relevante
+
+    elif query.data == 'pay_on_delivery':
+        await query.edit_message_text("You chose pay on delivery. Proceeding to the next step.")
+        logging.info("Pay on delivery selected.")
+        return ORDER_CONFIRMATION  # Altere para o próximo estado relevante
+
+    else:
+        await query.edit_message_text("Invalid option. Please choose again.")
+        return PAYMENT_METHOD_CHOICE  # Retorna para o mesmo estado em caso de erro
+    
 async def pix_payment(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle the Pix payment callback query."""
     query = update.callback_query
@@ -379,9 +402,11 @@ def setup_handlers(application):
         entry_points=[CommandHandler('start', start)],
         states={
             EMAIL_VALIDATION: [MessageHandler(filters.TEXT & ~filters.COMMAND, email_validation)],
+            NEW_CUSTOMER: [MessageHandler(filters.TEXT & ~filters.COMMAND, new_customer)],
             CUSTOMER_REGISTRATION: [MessageHandler(filters.TEXT & ~filters.COMMAND, customer_registration)],
-            PAYMENT_METHOD: [CallbackQueryHandler(pix_payment, pattern='^pix_payment$'),
-                             CallbackQueryHandler(pay_on_delivery, pattern='^pay_on_delivery$')],
+            PAYMENT_METHOD: [CallbackQueryHandler(payment_method, pattern='^payment_method$')],
+            PAYMENT_METHOD_CHOICE: [CallbackQueryHandler(payment_method_choice, pattern='^(pix_payment|pay_on_delivery)$')],
+            ORDER_CONFIRMATION: [MessageHandler(filters.TEXT & ~filters.COMMAND, confirm_order)],
             # outros estados
         },
         fallbacks=[CommandHandler('cancel', cancel)],
@@ -398,7 +423,6 @@ def add_callback_handlers(application):
     application.add_handler(CallbackQueryHandler(payment_method, pattern='^payment_method$'))
     application.add_handler(CallbackQueryHandler(pix_payment, pattern='^pix_payment$'))
     application.add_handler(CallbackQueryHandler(pay_on_delivery, pattern='^pay_on_delivery$'))
-    application.add_handler(CallbackQueryHandler(confirm_order, pattern='^confirm_order$'))
     application.add_handler(CallbackQueryHandler(finalize_order, pattern='^finalize_order$'))
     application.add_handler(CallbackQueryHandler(cancel_order, pattern='^cancel_order$'))
     application.add_handler(CallbackQueryHandler(talk_to_agent, pattern='^talk_to_agent$'))
@@ -410,6 +434,8 @@ def add_callback_handlers(application):
     application.add_handler(CallbackQueryHandler(checkout, pattern='^checkout$'))
     application.add_handler(CallbackQueryHandler(existing_customer, pattern='^existing_customer$'))
     application.add_handler(CallbackQueryHandler(categories, pattern='^categories_\\d+$'))
+    application.add_handler(CallbackQueryHandler(payment_method_choice, pattern='^(pix_payment|pay_on_delivery)$'))
+    application.add_handler(CallbackQueryHandler(confirm_order, pattern='^confirm_order$'))
 
 def add_message_handlers(application):
     """Add all message handlers."""

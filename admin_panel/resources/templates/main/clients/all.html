@@ -14,6 +14,7 @@
         <th>Id</th>
         <th>Name</th>
         <th>City</th>
+        <th>Email</th>
         <th>Active</th>
         <th>Action</th>
       </tr>
@@ -24,6 +25,7 @@
           <td>{{ client.id }}</td>
           <td>{{ client.name|default:'' }}</td>
           <td>{{ client.city|default:'' }}</td>
+          <td>{{ client.email|default:'default@example.com' }}</td>
           <td>
             {% if client.is_active %}
                 <span class="text-success">Active</span>
@@ -41,5 +43,16 @@
       {% endfor %}
     </tbody>
   </table>
+
+  {% if messages %}
+  <div>
+    {% for message in messages %}
+      <div class="alert {% if message.tags %}alert-{{ message.tags }}{% else %}alert-info{% endif %}" role="alert">
+        {{ message }}
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+  
   {% endblock %}
 {% endblock %}

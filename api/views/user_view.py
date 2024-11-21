@@ -199,3 +199,12 @@ def update_user_page(request, pk):
             'roles': roles,
             'user': user,
         })
+        
+def delete_user(request, pk=None):
+    user = get_object_or_404(User, pk=pk)
+    try:
+        user.delete()
+        messages.success(request, "User deleted successfully")
+    except Exception as e:
+        messages.error(request, f"Error deleting user: {e}")
+    return redirect('users') 

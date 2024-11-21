@@ -85,20 +85,23 @@ def update_category(request, category_id=None):
     })
     
 @login_required
-@swagger_auto_schema(method='post', request_body=CategorySerializer, responses={201: CategorySerializer()})
-@api_view(['POST'])
 def create_category_page(request):
     if request.method == 'POST':
         serializer = CategorySerializer(data=request.POST)
+        
         if serializer.is_valid():
             serializer.save()
-            messages.success(request, 'Category created successfully!')
-            return redirect('categories') 
+            # Adiciona a mensagem de sucesso
+            messages.success(request, 'Categoria criada com sucesso!')
+            return redirect('categories')  # Redireciona para a lista de categorias
         else:
+            # Renderiza novamente o formulário com os erros
             return render(request, 'main/categories/add.html', {
                 'isLoggedIn': request.user.is_authenticated,
                 'errors': serializer.errors
             })
+
+    # Exibe o formulário vazio no método GET
     return render(request, 'main/categories/add.html', {
         'isLoggedIn': request.user.is_authenticated
     })
@@ -128,3 +131,27 @@ def list_products_by_category_view(request, category_id):
         "category": category.name,
         "products": serializer.data
     }, status=status.HTTP_200_OK)
+    
+@login_required
+def edit_category_page(request, category_id=None):
+    """
+    Renderiza a página de edição de uma categoria existente.
+    """
+    category = get_object_or_404(Category, pk=category_id)
+
+    if request.method == 'POST':
+        serializer = CategorySerializer(category, data=request.POST, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            messages.success(request, 'Category updated successfully!')
+            return redirect('categories')  # Redireciona para a lista de categorias
+        else:
+            messages.error(request, 'Failed to update category. Please correct the errors.')
+    else:
+        serializer = CategorySerializer(category)
+
+    return render(request, 'main/categories/edit.html', {
+        'category': category,
+        'serializer': serializer,
+        'isLoggedIn': request.user.is_authenticated,
+    })

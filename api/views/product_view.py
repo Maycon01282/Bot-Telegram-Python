@@ -101,22 +101,29 @@ def create_product(request):
     })
 
 @login_required
-@swagger_auto_schema(method='put', request_body=ProductSerializer, responses={200: ProductSerializer()})
-@api_view(['PUT'])
-def edit_product(request, pk):
+def delete_product(request, pk):
     product = get_object_or_404(Product, pk=pk)
-    if request.method == 'PUT':
-        data = request.data.copy()
+    if request.method == 'POST':
+        product.delete()
+        messages.success(request, 'Produto excluído com sucesso!')
+        return redirect('products')
+    return render(request, 'main/products/confirm_delete.html', {'product': product})
+
+@login_required
+def edit_product_page(request, pk):
+    product = get_object_or_404(Product, pk=pk)
+    if request.method == 'POST':
+        data = request.POST.copy()
         data.update(request.FILES)
         if 'photo' not in request.FILES:
             data['photo'] = product.photo
         serializer = ProductSerializer(product, data=data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            messages.success(request, 'Product updated successfully!')
+            messages.success(request, 'Produto atualizado com sucesso!')
             return redirect('products')
         else:
-            messages.error(request, 'Error updating product. Please check the data and try again.')
+            messages.error(request, 'Erro ao atualizar o produto. Verifique os dados e tente novamente.')
             return render(request, 'main/products/edit.html', {
                 'product': product,
                 'isLoggedIn': request.user.is_authenticated,
@@ -130,12 +137,23 @@ def edit_product(request, pk):
     })
 
 @login_required
-@swagger_auto_schema(method='delete', responses={204: 'No Content'})
-@api_view(['DELETE'])
-def delete_product(request, pk):
-    product = get_object_or_404(Product, pk=pk)
-    if request.method == 'DELETE':
-        product.delete()
-        messages.success(request, 'Product deleted successfully!')
-        return redirect('products')
-    return render(request, 'main/products/confirm_delete.html', {'product': product})
+def create_product_page(request):
+    if request.method == 'POST':
+        data = request.POST.copy()
+        data.update(request.FILES)
+        serializer = ProductSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            messages.success(request, 'Product created successfully!')
+            return redirect('products')
+        else:
+            messages.error(request, 'Error creating product. Please check the data and try again.')
+            return render(request, 'main/products/add.html', {
+                'isLoggedIn': request.user.is_authenticated,
+                'errors': serializer.errors,
+                'categories': Category.objects.all()
+            })
+    return render(request, 'main/products/add.html', {
+        'isLoggedIn': request.user.is_authenticated,
+        'categories': Category.objects.all()
+    })

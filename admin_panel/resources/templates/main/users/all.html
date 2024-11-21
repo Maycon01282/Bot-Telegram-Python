@@ -27,7 +27,7 @@
           <td>{{ user.id }}</td>
           <td>{{ user.name }}</td>
           <td>{{ user.username }}</td>
-          <td>{{ user.role.value }}</td>
+          <td>{{ user.role }}</td>
           <td>
             {% if user.id %}
               <a class="btn btn-xs btn-info" href="{% url 'update_user_page' user.id %}">

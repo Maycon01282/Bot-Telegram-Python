@@ -65,10 +65,10 @@
 
     <form method="post" action="{% url 'delete_order' order.id %}">
       {% csrf_token %}
-      <input type="hidden" name="id" value="{{ order.id }}">
+      <input type="hidden" name="_method" value="DELETE">
       <button class="btn btn-danger" type="submit">Delete</button>
     </form>
-
+    
   {% else %}
     <div class="alert alert-danger" role="alert">
       <h4 class="alert-heading">Error</h4>

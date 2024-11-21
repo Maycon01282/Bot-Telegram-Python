@@ -17,6 +17,5 @@ urlpatterns = [
     path('order_item/', include('api.urls.order_item_url')),
     path('products/', include('api.urls.product_url')),
     path('users/', include('api.urls.user_url')),
-    path('register/', include('api.urls.user_url')),
     path('', include(swagger_urls)),
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
