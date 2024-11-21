@@ -1,5 +1,6 @@
 import logging
 import os
+import emoji
 import requests
 import aiohttp
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, InputFile
@@ -22,11 +23,13 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         ("Talk to Agent", "talk_to_agent")
     ])
     await update.message.reply_text(
-        'Welcome to our shopping bot! Choose an option:\n'
-        '1. Click "Categories" to see the products.\n'
-        '2. Click "Cart" to see the added items.\n'
-        '3. After adding products to the cart, complete the purchase by choosing the payment method.\n'
-        '4. Click "Talk to Agent" to speak with a representative.',
+        emoji.emojize(
+            'Welcome to our shopping bot! :shopping_cart: Choose an option:\n'
+            '1. Click "Categories" to see the products. :package:\n'
+            '2. Click "Cart" to see the added items. :shopping_bags:\n'
+            '3. After adding products to the cart, complete the purchase by choosing the payment method. :credit_card:\n'
+            '4. Click "Talk to Agent" to speak with a representative. :telephone_receiver:'
+        ),
         reply_markup=keyboard
     )
 
@@ -45,8 +48,7 @@ async def categories(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     categories = response['categories']
     logger.info(f"Fetched categories: {categories}")
     keyboard = generate_keyboard([(cat['name'], f"category_{cat['id']}") for cat in categories])
-    keyboard.append([InlineKeyboardButton("Back to Start", callback_data="start")])
-    await query.edit_message_text(text="Choose a category:", reply_markup=InlineKeyboardMarkup(keyboard))
+    await query.edit_message_text(text=emoji.emojize("Choose a category: :package:"), reply_markup=keyboard)
 
 async def add_to_cart(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
@@ -82,16 +84,15 @@ async def add_to_cart(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 
         logging.info(f"Product {product_id} added to cart")
 
-        # Ask the user if they want to add more products or go to the cart
+        # Pergunta ao usuário se deseja adicionar mais produtos ou ir ao carrinho
         keyboard = [
             [InlineKeyboardButton("Add more products", callback_data="categories")],
-            [InlineKeyboardButton("Go to cart", callback_data="cart")],
-            [InlineKeyboardButton("Back to Start", callback_data="start")]
+            [InlineKeyboardButton("Go to cart", callback_data="cart")]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         await context.bot.send_message(
             chat_id=update.effective_chat.id,
-            text="Product added to cart! What would you like to do next?",
+            text=emoji.emojize("Product added to cart! :white_check_mark: What would you like to do next?"),
             reply_markup=reply_markup
         )
 
@@ -133,11 +134,10 @@ async def category(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         keyboard = generate_keyboard([
             (prod['name'], f"product_{prod['id']}") for prod in products
         ])
-        keyboard.append([InlineKeyboardButton("Back to Start", callback_data="start")])
         
         await query.edit_message_text(
-            text="Choose a product:",
-            reply_markup=InlineKeyboardMarkup(keyboard)
+            text=emoji.emojize("Choose a product: :shopping_bags:"),
+            reply_markup=keyboard
         )
 
     except ValueError as ve:
@@ -167,14 +167,13 @@ async def product(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         return
     
     keyboard = generate_keyboard([("Add to cart", f"add_to_cart_{product_id}"), ("Back", 'categories')])
-    keyboard.append([InlineKeyboardButton("Back to Start", callback_data="start")])
     await context.bot.send_photo(
         chat_id=update.effective_chat.id,
         photo=open(photo_path, 'rb'),
-        caption=(
-            f"Product details:\n\n{product['name']}\n{product['description']}\nPrice: {product['price']}"
+        caption=emoji.emojize(
+            f"Product details:\n\n{product['name']}\n{product['description']}\nPrice: {product['price']} :moneybag:"
         ),
-        reply_markup=InlineKeyboardMarkup(keyboard)
+        reply_markup=keyboard
     )
 
 async def cart(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -182,7 +181,7 @@ async def cart(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await query.answer()
     cart = context.user_data.get('cart', [])
     if not cart:
-        await query.edit_message_text(text="Your cart is empty.")
+        await query.edit_message_text(text=emoji.emojize("Your cart is empty. :shopping_cart:"))
         return
 
     # Fetch product details for each item in the cart
@@ -200,8 +199,7 @@ async def cart(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     # Generate cart text
     cart_text = "\n".join([f"{prod['name']} - {prod['price']} (Quantity: {item['quantity']})" for prod, item in zip(products, cart)])
     keyboard = generate_keyboard([("Checkout", 'checkout')])
-    keyboard.append([InlineKeyboardButton("Back to Start", callback_data="start")])
-    await query.edit_message_text(text=f"Your cart:\n\n{cart_text}", reply_markup=InlineKeyboardMarkup(keyboard))
+    await query.edit_message_text(text=emoji.emojize(f"Your cart:\n\n{cart_text} :shopping_cart:"), reply_markup=keyboard)
 
 async def checkout(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle the checkout callback query."""
@@ -210,26 +208,25 @@ async def checkout(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     
     keyboard = [
         [InlineKeyboardButton("Existing Customer", callback_data='existing_customer')],
-        [InlineKeyboardButton("New Customer", callback_data='new_customer')],
-        [InlineKeyboardButton("Back to Start", callback_data="start")]
+        [InlineKeyboardButton("New Customer", callback_data='new_customer')]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     await query.edit_message_text(
-        text="Are you an existing customer or a new customer?",
+        text=emoji.emojize("Are you an existing customer or a new customer?"),
         reply_markup=reply_markup
     )
 
 async def order_confirmation(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Handle the order confirmation."""
     if update.message.photo:
-        # The customer sent a photo (payment receipt)
+        # O cliente enviou uma foto (comprovante de pagamento)
         file_id = update.message.photo[-1].file_id
         new_file = await context.bot.get_file(file_id)
         await new_file.download(f'comprovantes/{file_id}.jpg')
         logging.info(f"Payment receipt received and saved as comprovantes/{file_id}.jpg")
 
         await update.message.reply_text("Payment receipt received. Your order is being processed.")
-        # Here you can add the logic to finalize the order
+        # Aqui você pode adicionar a lógica para finalizar a ordem
         return ConversationHandler.END
     else:
         await update.message.reply_text("Please send the payment receipt as a photo.")
@@ -239,7 +236,7 @@ async def finalize_order(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     """Handle the finalize order callback query."""
     query = update.callback_query
     await query.answer()
-    await query.edit_message_text("Creating your order...")
+    await query.edit_message_text(emoji.emojize("Creating your order... :hourglass_flowing_sand:"))
 
     total = calculate_total_value(context.user_data['cart'])
     order_data = {
@@ -254,7 +251,7 @@ async def finalize_order(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     # Create the order
     order_id = await create_order(order_data)
     if not order_id:
-        await query.edit_message_text("Error confirming order: Unable to create order. Please try again.")
+        await query.edit_message_text(emoji.emojize("Error confirming order: Unable to create order. :x:. Please try again."))
         return
 
     logging.info(f"Order ID: {order_id}")
@@ -270,9 +267,12 @@ async def finalize_order(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             "product": product_id,
             "quantity": quantity
         }
-        await create_order_item(order_item_data)
+        logging.info(f"Order item data: {order_item_data}")
+        if not await create_order_item(order_item_data):
+            await query.edit_message_text(emoji.emojize(f"Error creating order item: Unable to create order item. :x:. Please try again."))
+            return
 
-    await query.edit_message_text("Your order has been confirmed! Track the status of your order through our system.")
+    await query.edit_message_text(emoji.emojize("Your order has been confirmed! :white_check_mark: Track the status of your order through our system."))
     context.user_data['cart'].clear()
 
 async def create_order(order_data):
@@ -303,14 +303,14 @@ async def existing_customer(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     """Handle the existing customer callback query."""
     query = update.callback_query
     await query.answer()
-    await query.edit_message_text(text="Please provide your email for validation:")
+    await query.edit_message_text(text=emoji.emojize("Please provide your email for validation: :email:"))
     return EMAIL_VALIDATION
 
 async def email_validation(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Handle the email validation message."""
     email = update.message.text
     logging.info(f"Validating email: {email}")
-    await update.message.reply_text("Validating your email...")
+    await update.message.reply_text(emoji.emojize("Validating your email... :hourglass_flowing_sand:"))
     try:
         response = requests.get(f'{API_BASE_URL}/clients/validate_email/?email={email}')
         logging.info(f"API response status code: {response.status_code}")
@@ -326,35 +326,34 @@ async def email_validation(update: Update, context: ContextTypes.DEFAULT_TYPE) -
                 context.user_data['client_city'] = client_data.get('city')
                 context.user_data['client_address'] = client_data.get('address')
 
-                await update.message.reply_text("Email successfully validated! Please choose the payment method:")
+                await update.message.reply_text(emoji.emojize("Email successfully validated! :white_check_mark: Please choose the payment method:"))
 
                 keyboard = [
                     [InlineKeyboardButton("Pix", callback_data='pix_payment')],
-                    [InlineKeyboardButton("Pay on delivery", callback_data='pay_on_delivery')],
-                    [InlineKeyboardButton("Back to Start", callback_data="start")]
+                    [InlineKeyboardButton("Pay on delivery", callback_data='pay_on_delivery')]
                 ]
                 reply_markup = InlineKeyboardMarkup(keyboard)
-                await update.message.reply_text("Choose the payment method:", reply_markup=reply_markup)
+                await update.message.reply_text(emoji.emojize("Choose the payment method: :credit_card:"), reply_markup=reply_markup)
                 
                 return PAYMENT_METHOD_CHOICE
             else:
                 logging.error("Client data is missing in the API response.")
-                await update.message.reply_text("An error occurred while retrieving client data. Please try again later.")
+                await update.message.reply_text(emoji.emojize("An error occurred while retrieving client data. :x: Please try again later."))
                 return CUSTOMER_REGISTRATION
         else:
             logging.info("Email validation failed, transitioning to CUSTOMER_REGISTRATION state.")
-            await update.message.reply_text("Email not found. Please provide your details for registration (Name, Email, Phone, City, Address):")
+            await update.message.reply_text(emoji.emojize("Email not found. :x: Please provide your details for registration (Name, Email, Phone, City, Address): :memo:"))
             return CUSTOMER_REGISTRATION
     except Exception as e:
         logging.error(f"Exception during email validation: {e}")
-        await update.message.reply_text("An error occurred during email validation. Please try again later.")
+        await update.message.reply_text(emoji.emojize("An error occurred during email validation. :x: Please try again later."))
         return CUSTOMER_REGISTRATION
 
 async def new_customer(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle the new customer callback query."""
     query = update.callback_query
     await query.answer()
-    await query.message.reply_text("Please provide your details for registration (Name, Email, Phone, City, Address):")
+    await query.message.reply_text(emoji.emojize("Please provide your details for registration (Name, Email, Phone, City, Address): :memo:"))
     return CUSTOMER_REGISTRATION
 
 async def customer_registration(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -362,40 +361,39 @@ async def customer_registration(update: Update, context: ContextTypes.DEFAULT_TY
     logging.info("Starting customer registration process.")
     customer_data = update.message.text.split(',')
     if len(customer_data) != 5:
-        await update.message.reply_text("Invalid input format. Please provide your details in the format: Name, Email, Phone, City, Address")
+        await update.message.reply_text(emoji.emojize("Invalid input format. Please provide your details in the format: Name, Email, Phone, City, Address"))
         return CUSTOMER_REGISTRATION
 
     data = {
         "name": customer_data[0].strip(),
         "email": customer_data[1].strip(),
-        "phone_number": customer_data[2].strip(),
+        "phone_number": customer_data[2].strip(),  # Corrigido para 'phone_number'
         "city": customer_data[3].strip(),
         "address": customer_data[4].strip()
     }
     logging.info(f"Customer data: {data}")
 
-    await update.message.reply_text("Registering your details...")
+    await update.message.reply_text(emoji.emojize("Registering your details... :hourglass_flowing_sand:"))
     try:
         response = requests.post(f'{API_BASE_URL}/clients/create/', json=data)
         logging.info(f"API response status code: {response.status_code}")
         logging.info(f"API response content: {response.content}")
         if response.status_code == 201:
-            await update.message.reply_text("Registration successful! Please choose the payment method:")
+            await update.message.reply_text(emoji.emojize("Registration successful! :white_check_mark: Please choose the payment method:"))
             keyboard = [
                 [InlineKeyboardButton("Pix", callback_data='pix_payment')],
-                [InlineKeyboardButton("Pay on delivery", callback_data='pay_on_delivery')],
-                [InlineKeyboardButton("Back to Start", callback_data="start")]
+                [InlineKeyboardButton("Pay on delivery", callback_data='pay_on_delivery')]
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)
-            await update.message.reply_text("Choose the payment method:", reply_markup=reply_markup)
+            await update.message.reply_text(emoji.emojize("Choose the payment method: :credit_card:"), reply_markup=reply_markup)
             
             return PAYMENT_METHOD_CHOICE        
         else:
-            await update.message.reply_text("Registration failed. Please try again.")
+            await update.message.reply_text(emoji.emojize("Registration failed. :x: Please try again."))
             return CUSTOMER_REGISTRATION
     except Exception as e:
         logging.error(f"Exception during registration: {e}")
-        await update.message.reply_text("An error occurred during registration. Please try again later.")
+        await update.message.reply_text(emoji.emojize("An error occurred during registration. :x: Please try again later."))
         return CUSTOMER_REGISTRATION
 
 async def payment_method(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -409,14 +407,13 @@ async def payment_method(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     
     keyboard = [
         [InlineKeyboardButton("Pix", callback_data='pix_payment')],
-        [InlineKeyboardButton("Pay on delivery", callback_data='pay_on_delivery')],
-        [InlineKeyboardButton("Back to Start", callback_data="start")]
+        [InlineKeyboardButton("Pay on delivery", callback_data='pay_on_delivery')]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     logging.info("Displaying payment method options.")
     
     try:
-        await query.edit_message_text("Choose the payment method:", reply_markup=reply_markup)
+        await query.edit_message_text(emoji.emojize("Choose the payment method: :credit_card:"), reply_markup=reply_markup)
         logging.info("Payment method options displayed successfully.")
     except Exception as e:
         logging.error(f"Error displaying payment method options: {e}")
@@ -431,16 +428,16 @@ async def payment_method_choice(update: Update, context: ContextTypes.DEFAULT_TY
     if query.data == 'pix_payment':
         await query.edit_message_text("You chose Pix. Proceeding to the next step.")
         logging.info("Pix payment selected.")
-        return ORDER_CONFIRMATION  # Change to the next relevant state
+        return ORDER_CONFIRMATION  # Altere para o próximo estado relevante
 
     elif query.data == 'pay_on_delivery':
         await query.edit_message_text("You chose pay on delivery. Proceeding to the next step.")
         logging.info("Pay on delivery selected.")
-        return ORDER_CONFIRMATION  # Change to the next relevant state
+        return ORDER_CONFIRMATION  # Altere para o próximo estado relevante
 
     else:
         await query.edit_message_text("Invalid option. Please choose again.")
-        return PAYMENT_METHOD_CHOICE  # Return to the same state in case of error
+        return PAYMENT_METHOD_CHOICE  # Retorna para o mesmo estado em caso de erro
     
 async def pix_payment(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle the Pix payment callback query."""
@@ -456,17 +453,18 @@ async def pix_payment(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     city = os.getenv("RECEIVER_CITY")
     txid = os.getenv("TXID", "123456789")
     
-    # Generate the payload and QR Code using the Payload class
+    # Gerar o payload e o QR Code usando a classe Payload
     payload = Payload(receiver_name, pix_key, f"{total:.2f}", city, txid)
     payload.gerarPayload()
     
-    # Load the generated QR Code image
+    # Carregar a imagem do QR Code gerado
     qr_code_path = os.path.expanduser(os.path.join(payload.diretorioQrCode, 'pixqrcodegen.png'))
     with open(qr_code_path, 'rb') as qr_code_file:
-        await query.message.reply_photo(photo=InputFile(qr_code_file), caption=f"Use the QR Code below to pay R$ {total:.2f} via Pix.")
+        await query.message.reply_photo(photo=InputFile(qr_code_file), caption=emoji.emojize(f"Use the QR Code below to pay R$ {total:.2f} via Pix. :money_with_wings:"))
     
     await query.message.reply_text("After completing the payment, please send the payment receipt.")
     logging.info("Pix payment selected and QR Code sent.")
+    await confirm_order(update, context)
 
 async def pay_on_delivery(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle the pay on delivery callback query."""
@@ -486,7 +484,6 @@ async def confirm_order(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     keyboard = [
         [InlineKeyboardButton("Confirm Order", callback_data='confirm_order_final')],
         [InlineKeyboardButton("Cancel Order", callback_data='cancel_order')]
-        [InlineKeyboardButton("Back to Start", callback_data="start")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     await query.message.reply_text("Do you want to confirm your order?", reply_markup=reply_markup)
@@ -495,7 +492,7 @@ async def cancel_order(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     """Handle the cancel order callback query."""
     query = update.callback_query
     await query.answer()
-    await query.edit_message_text("Your order has been cancelled.")
+    await query.edit_message_text(emoji.emojize("Your order has been cancelled. :x:"))
     
 async def talk_to_agent(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle the talk to agent callback query."""
@@ -503,7 +500,7 @@ async def talk_to_agent(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     await query.answer()
     
     await query.edit_message_text(
-        text="An agent will contact you soon."
+        text=emoji.emojize("An agent will contact you soon. :telephone_receiver:")
     )
     
     agent_chat_id = os.getenv("AGENT_CHAT_ID")
@@ -517,7 +514,7 @@ async def talk_to_agent(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle the cancel command."""
-    await update.message.reply_text("Operation cancelled.")
+    await update.message.reply_text(emoji.emojize("Operation cancelled. :x:"))
     return ConversationHandler.END
 
 async def confirm_order_final(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -535,6 +532,7 @@ def setup_handlers(application):
             PAYMENT_METHOD: [CallbackQueryHandler(payment_method, pattern='^payment_method$')],
             PAYMENT_METHOD_CHOICE: [CallbackQueryHandler(payment_method_choice, pattern='^(pix_payment|pay_on_delivery)$')],
             ORDER_CONFIRMATION: [MessageHandler(filters.PHOTO, order_confirmation)],
+            # outros estados
         },
         fallbacks=[CommandHandler('cancel', cancel)],
         per_message=True  # Adicione esta linha para garantir que os handlers sejam rastreados para cada mensagem
