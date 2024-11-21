@@ -30,10 +30,26 @@ def fetch_data(endpoint):
 def generate_keyboard(buttons):
     return InlineKeyboardMarkup([[InlineKeyboardButton(text, callback_data=data)] for text, data in buttons])
 
+import requests
+
 def calculate_total_value(cart):
     total = 0
-    for prod_id in cart:
-        product = fetch_data(f'products/{prod_id}/')
-        if product:
-            total += product['price']
+    for item in cart:
+        product_id = item['product_id']
+        quantity = item['quantity']
+        
+        # Construir a URL corretamente
+        url = f"http://localhost:8000/products/{product_id}/"
+        logging.info(f"Fetching data from {url}")
+        
+        try:
+            response = requests.get(url)
+            response.raise_for_status()
+            product_data = response.json()
+            product_price = product_data['price']
+            total += product_price * quantity
+        except requests.exceptions.RequestException as e:
+            logging.error(f"Error fetching data: {e}")
+            continue
+    
     return total
