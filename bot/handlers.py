@@ -446,7 +446,19 @@ async def pix_payment(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     
     context.user_data['payment_method'] = 'pix'
     
+    # Verificar se o carrinho de compras está presente
+    if 'cart' not in context.user_data:
+        await query.message.reply_text("Your cart is empty. Please add items to your cart before proceeding with the payment.")
+        logging.error("Cart not found in user data.")
+        return
+    
+    # Adicionar log para verificar o conteúdo do carrinho
+    logging.info(f"Carrinho de compras: {context.user_data['cart']}")
+    
     total = calculate_total_value(context.user_data['cart'])
+    
+    # Adicionar log para verificar o valor total calculado
+    logging.info(f"Valor total calculado: {total}")
     
     pix_key = os.getenv("PIX_KEY")
     receiver_name = os.getenv("RECEIVER_NAME")
