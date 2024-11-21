@@ -9,7 +9,7 @@ class Order(models.Model):
         
     class PaymentMethod(models.TextChoices):
         PIX = 'pix', 'Pix'
-        CASH_ON_DELIVERY = 'cash_on_delivery', 'Cash on Delivery'
+        CASH_ON_DELIVERY = 'pay_on_delivery', 'Pay on Delivery'
 
     client = models.ForeignKey('Client', related_name='orders', on_delete=models.CASCADE)
     created_date = models.DateTimeField(auto_now_add=True)

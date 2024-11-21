@@ -12,7 +12,7 @@ urlpatterns = [
     path('clients/', include('api.urls.client_url')),  # Include client URLs
     path('message/', include('api.urls.message_url')),  # Include message URLs
     path('order/', include('api.urls.order_url')),  # Include order URLs
-    path('order_item/', include('api.urls.order_item_url')),  # Include order item URLs
+    path('order_items/', include('api.urls.order_item_url')),  # Include order item URLs
     path('products/', include('api.urls.product_url')),  # Include product URLs
     path('users/', include('api.urls.user_url')),  # Include user URLs
     path('', include('swagger_view')),  # Include the swagger_view URLs
