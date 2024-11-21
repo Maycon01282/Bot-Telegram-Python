@@ -14,7 +14,7 @@ urlpatterns = [
     path('clients/', include('api.urls.client_url')),
     path('messages/', include('api.urls.message_url')),
     path('orders/', include('api.urls.order_url')),
-    path('order_item/', include('api.urls.order_item_url')),
+    path('order_items/', include('api.urls.order_item_url')),
     path('products/', include('api.urls.product_url')),
     path('users/', include('api.urls.user_url')),
     path('', include(swagger_urls)),

@@ -123,7 +123,8 @@ def validate_email(request):
     if email:
         client = Client.objects.filter(email=email).first()
         if client:
-            return JsonResponse({'status': 'success', 'message': 'Email found'})
+            client_data = ClientSerializer(client).data
+            return JsonResponse({'status': 'success', 'message': 'Email found', 'client_data': client_data})
         else:
             return JsonResponse({'status': 'error', 'message': 'Email not found'})
     return JsonResponse({'status': 'error', 'message': 'Invalid request'})
