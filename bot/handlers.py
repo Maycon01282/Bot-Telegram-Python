@@ -4,6 +4,7 @@ import emoji
 import requests
 import aiohttp
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, InputFile
+from telegram.constants import ParseMode
 from telegram.ext import CallbackQueryHandler, MessageHandler, filters, ContextTypes, CommandHandler, ConversationHandler
 from bot.pixqrcodegen import Payload
 from bot.utils import *
@@ -367,7 +368,7 @@ async def customer_registration(update: Update, context: ContextTypes.DEFAULT_TY
     data = {
         "name": customer_data[0].strip(),
         "email": customer_data[1].strip(),
-        "phone_number": customer_data[2].strip(),  # Corrigido para 'phone_number'
+        "phone_number": customer_data[2].strip(),
         "city": customer_data[3].strip(),
         "address": customer_data[4].strip()
     }
@@ -379,6 +380,14 @@ async def customer_registration(update: Update, context: ContextTypes.DEFAULT_TY
         logging.info(f"API response status code: {response.status_code}")
         logging.info(f"API response content: {response.content}")
         if response.status_code == 201:
+            client_data = response.json()
+            context.user_data['client_id'] = client_data.get('id')
+            context.user_data['client_name'] = client_data.get('name')
+            context.user_data['client_email'] = client_data.get('email')
+            context.user_data['client_phone'] = client_data.get('phone_number')
+            context.user_data['client_city'] = client_data.get('city')
+            context.user_data['client_address'] = client_data.get('address')
+
             await update.message.reply_text(emoji.emojize("Registration successful! :white_check_mark: Please choose the payment method:"))
             keyboard = [
                 [InlineKeyboardButton("Pix", callback_data='pix_payment')],
@@ -511,18 +520,16 @@ async def talk_to_agent(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     query = update.callback_query
     await query.answer()
     
+    telegram_user_link = "https://t.me/luizgabrielpagliari"  # Substitua pelo nome de usuário do Telegram
+    whatsapp_link = "https://wa.me/5545999848185"  # Substitua pelo número do WhatsApp no formato internacional
+
     await query.edit_message_text(
-        text=emoji.emojize("An agent will contact you soon. :telephone_receiver:")
+        text=emoji.emojize(
+            f"An agent will contact you soon. :telephone_receiver:\n\n"
+            f"Or you can contact us directly via [Telegram]({telegram_user_link}) or [WhatsApp]({whatsapp_link})."
+        ),
+        parse_mode=ParseMode.MARKDOWN
     )
-    
-    agent_chat_id = os.getenv("AGENT_CHAT_ID")
-    if agent_chat_id:
-        await context.bot.send_message(
-            chat_id=agent_chat_id,
-            text=f"User {update.effective_user.username} ({update.effective_user.id}) requested to talk to an agent."
-        )
-    else:
-        logging.error("AGENT_CHAT_ID not configured in .env")
 
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle the cancel command."""
