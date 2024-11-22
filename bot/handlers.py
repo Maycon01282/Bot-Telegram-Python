@@ -9,7 +9,14 @@ from telegram.ext import CallbackQueryHandler, MessageHandler, filters, ContextT
 from bot.pixqrcodegen import Payload
 from bot.utils import *
 from bot.states import EMAIL_VALIDATION, NEW_CUSTOMER, CUSTOMER_REGISTRATION, PAYMENT_METHOD, ORDER_CONFIRMATION, PAYMENT_METHOD_CHOICE
+import asyncio
+from dotenv import load_dotenv
+import asyncpg
+import aiomysql
 
+
+
+load_dotenv()
 logger = logging.getLogger(__name__)
 
 # Handlers
@@ -275,6 +282,35 @@ async def finalize_order(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
     await query.edit_message_text(emoji.emojize("Your order has been confirmed! :white_check_mark: Track the status of your order through our system."))
     context.user_data['cart'].clear()
+
+    # Start checking the order status
+    asyncio.create_task(check_order_status(update, context, order_id))
+    
+async def get_order_status_from_database(order_id: int) -> str:
+    conn = await aiomysql.connect(
+        user=os.getenv('DB_USER'),
+        password=os.getenv('DB_PASSWORD'),
+        db=os.getenv('DB_NAME'),  # Corrected keyword argument
+        host=os.getenv('DB_HOST'),
+        port=int(os.getenv('DB_PORT'))
+    )
+    async with conn.cursor() as cur:
+        await cur.execute('SELECT status FROM api_order WHERE id = %s', (order_id,))
+        result = await cur.fetchone()
+    conn.close()
+    return result[0] if result else None
+
+async def check_order_status(update: Update, context: ContextTypes.DEFAULT_TYPE, order_id: int) -> None:
+    """Check the order status periodically and notify the user when it changes."""
+    previous_status = None
+    while True:
+        current_status = await get_order_status_from_database(order_id)
+        if current_status != previous_status:
+            await update.effective_chat.send_message(f"Your order status has been updated to: {current_status}.")
+            previous_status = current_status
+        if current_status == 'completed':  # or any other final status
+            break
+        await asyncio.sleep(60)  # Check every 60 seconds
 
 async def create_order(order_data):
     async with aiohttp.ClientSession() as session:
