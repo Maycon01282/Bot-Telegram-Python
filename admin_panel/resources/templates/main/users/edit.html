@@ -1,0 +1,141 @@
+{% extends 'common/home.html' %}
+{% load static %}
+
+{% block content %}
+<<<<<<< HEAD
+  <h1>User editing</h1>
+
+  {% if messages %}
+    <div>
+      {% for message in messages %}
+        <div class="alert {% if message.tags %}alert-{{ message.tags }}{% else %}alert-info{% endif %}" role="alert">
+          {{ message }}
+        </div>
+      {% endfor %}
+=======
+  <h1>User Editing</h1>
+
+  {% if errors %}
+    <div class="alert alert-danger">
+      <ul>
+        {% for field, error in errors.items %}
+          <li>{{ error }}</li>
+        {% endfor %}
+      </ul>
+>>>>>>> 7b880676f23262e3adad4f39c25763cc88ffe862
+    </div>
+  {% endif %}
+
+  {% if user %}
+<<<<<<< HEAD
+    <form method="post" action="{% url 'update_user' user.id %}">
+=======
+    <form method="post" action="{% url 'update_user_page' user.id %}">
+>>>>>>> 7b880676f23262e3adad4f39c25763cc88ffe862
+      {% csrf_token %}
+      <div class="form-group row">
+        <label class="col-sm-2">Id:</label>
+        <div class="col-sm-10">
+          <input class="form-control" type="number" name="id" value="{{ user.id }}" readonly>
+        </div>
+      </div>
+
+      <div class="form-group row">
+        <label class="col-sm-2">Name:</label>
+        <div class="col-sm-10">
+<<<<<<< HEAD
+          <input class="form-control" name="name" value="{{ user.name|default:'' }}">
+          {% if errors.name %}
+            <div class="text-warning">{{ errors.name }}</div>
+=======
+          <input class="form-control" type="text" name="name" value="{{ user.name|default:'' }}">
+          {% if errors.name %}
+            <div class="alert alert-danger error-message">{{ errors.name }}</div>
+>>>>>>> 7b880676f23262e3adad4f39c25763cc88ffe862
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="form-group row">
+        <label class="col-sm-2">Username:</label>
+        <div class="col-sm-10">
+<<<<<<< HEAD
+          <input class="form-control" name="username" value="{{ user.username|default:'' }}">
+          {% if errors.username %}
+            <div class="text-warning">{{ errors.username }}</div>
+=======
+          <input class="form-control" type="text" name="username" value="{{ user.username|default:'' }}">
+          {% if errors.username %}
+            <div class="alert alert-danger error-message">{{ errors.username }}</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="form-group row">
+        <label class="col-sm-2">Email:</label>
+        <div class="col-sm-10">
+          <input class="form-control" type="email" name="email" value="{{ user.email|default:'' }}">
+          {% if errors.email %}
+            <div class="alert alert-danger error-message">{{ errors.email }}</div>
+>>>>>>> 7b880676f23262e3adad4f39c25763cc88ffe862
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="form-group row">
+        <label class="col-sm-2">Password:</label>
+        <div class="col-sm-10">
+          <input class="form-control" type="password" name="password">
+          {% if errors.password %}
+<<<<<<< HEAD
+            <div class="text-warning">{{ errors.password }}</div>
+=======
+            <div class="alert alert-danger error-message">{{ errors.password }}</div>
+>>>>>>> 7b880676f23262e3adad4f39c25763cc88ffe862
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="form-group row">
+        <label class="col-sm-2">Role:</label>
+        <div class="col-sm-10">
+          <select class="form-control" name="role">
+            {% for role in roles %}
+<<<<<<< HEAD
+              <option value="{{ role.name }}" {% if user.role == role.name %}selected{% endif %}>
+=======
+              <option value="{{ role.name }}"
+                      {% if user.role == role.name %}selected{% endif %}>
+>>>>>>> 7b880676f23262e3adad4f39c25763cc88ffe862
+                {{ role.value }}
+              </option>
+            {% endfor %}
+          </select>
+          {% if errors.role %}
+<<<<<<< HEAD
+            <div class="text-warning">{{ errors.role }}</div>
+=======
+            <div class="alert alert-danger error-message">{{ errors.role }}</div>
+>>>>>>> 7b880676f23262e3adad4f39c25763cc88ffe862
+          {% endif %}
+        </div>
+      </div>
+
+      <button class="btn btn-success" type="submit">Update</button>
+    </form>
+
+    <form method="get" action="{% url 'users' %}">
+      <button class="btn btn-info" type="submit">Back</button>
+    </form>
+
+    <form method="post" action="{% url 'delete_user' user.id %}">
+      {% csrf_token %}
+      <button class="btn btn-danger" type="submit">Delete</button>
+    </form>
+  {% else %}
+    <div class="alert alert-danger" role="alert">
+      <h4 class="alert-heading">Error</h4>
+      <hr>This user does not exist!
+    </div>
+  {% endif %}
+{% endblock %}

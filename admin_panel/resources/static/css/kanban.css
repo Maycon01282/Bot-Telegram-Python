@@ -1,0 +1,150 @@
+.kanban-column {
+    background-color: #f7f7f7;
+    border: 1px solid #0000;
+    border-radius: 8px;
+    width: 24%;
+    display: flex;
+    flex-direction: column;
+    min-height: 600px;
+}
+
+.kanban-column-header {
+    color: #f7f7f7;
+    padding: 8px;
+    font-size: 16px;
+    text-align: center;
+    background-color: inherit; /* Herdar a cor de fundo da coluna */
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    border-bottom: 1px solid #0000; /* Borda para separar o cabeçalho dos itens */
+    width: 100%; /* Garante que o cabeçalho ocupe toda a largura */
+    box-sizing: border-box; /* Inclui padding e borda na largura total */
+}
+/* Ajuste de cores para cada título */
+.bg-primary {
+    background-color: #DC3545; /* Vermelho vibrante */
+    color: white; /* Texto branco */
+}
+
+.bg-warning {
+    background-color: #4285F4; /* Azul mais vibrante */
+    color: white; /* Texto em branco para contraste */
+}
+
+.bg-progress {
+    background-color: #FFC107; /* Amarelo mais vibrante */
+    color: white; /* Texto em branco para contraste */
+}
+
+.bg-success {
+    background-color: #28A745; /* Verde vibrante */
+    color: white; /* Texto branco */
+}
+
+.kanban-items {
+    flex-grow: 1;
+    padding: 10px;
+    padding-bottom: 20px; /* Aumenta a área de soltura no final da coluna */
+    background-color: #f7f7f7; /* Cor de fundo da área de pedidos */
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+}
+
+/* Itens do Kanban */
+.kanban-item {
+    background-color: #ffffff;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 10px;
+    margin-bottom: 10px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    cursor: grab;
+}
+
+.kanban-board {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+    padding: 20px;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    background-color: #ffffff;
+    border-radius: 8px;
+}
+
+.kanban-filters {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 0; /* Remove o padding extra */
+    margin-bottom: 20px;
+    justify-content: flex-end; /* Alinha o filtro à direita */
+    background-color: transparent; /* Remove o fundo */
+    box-shadow: none; /* Remove a sombra */
+}
+
+/* Barra de Pesquisa */
+.search-bar {
+    padding: 8px 12px;
+    font-size: 16px;
+    width: 250px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    transition: border-color 0.3s;
+}
+
+/* Filtro de Status */
+.status-filter {
+    padding: 8px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #fff;
+    width: 150px;
+    transition: border-color 0.3s;
+}
+
+/* Botão de Aplicar Filtros */
+.filter-button {
+    padding: 8px 16px;
+    font-size: 16px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    outline: none;
+}
+
+.filter-button:hover {
+    background-color: #45a049;
+}
+
+/* Footer styling for ID and edit button alignment */
+.kanban-item-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+    font-size: 14px;
+}
+
+/* Styling for edit button */
+.edit-icon {
+    display: inline-flex;
+    align-items: center;
+    padding: 5px 8px;
+    font-size: 12px;
+    color: #007bff;
+    text-decoration: none;
+    border: 1px solid #007bff;
+    border-radius: 5px;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.edit-icon:hover {
+    background-color: #007bff;
+    color: white;
+}

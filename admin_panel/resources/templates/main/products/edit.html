@@ -1,0 +1,161 @@
+{% extends 'common/home.html' %}
+{% load static %}
+
+{% block content %}
+  <h1>Product editing</h1>
+
+  {% if messages %}
+  <div>
+    {% for message in messages %}
+      <div class="alert {% if message.tags %}alert-{{ message.tags }}{% else %}alert-info{% endif %}" role="alert">
+        {{ message }}
+      </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if category_error %}
+  <div class="alert alert-warning" role="alert">
+    {{ category_error }}
+  </div>
+  {% endif %}
+
+  {% if product %}
+
+    <form method="post" action="{% url 'edit_product' product.id %}" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="form-group row">
+        <label class="col-sm-2">Id:</label>
+        <div class="col-sm-10">
+          <input class="form-control" type="number" name="id" value="{{ product.id }}" readonly>
+        </div>
+      </div>
+
+      <div class="form-group row">
+        <label class="col-sm-2">Photo:</label>
+        <div class="col-sm-10">
+          <input type="hidden" name="photoUrl" value="{{ product.photoUrl|default:'' }}">
+          <input class="form-control" id="photo" type="file" name="photo" accept="image/*">
+          {% if errors.photo %}
+            <div class="text-warning">{{ errors.photo }}</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="form-group row">
+        <label class="col-sm-2">Name:</label>
+        <div class="col-sm-10">
+          <input class="form-control" name="name" value="{{ product.name|default:'' }}">
+          {% if errors.name %}
+            <div class="text-warning">{{ errors.name }}</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="form-group row">
+        <label class="col-sm-2">Description:</label>
+        <div class="col-sm-10">
+          <textarea class="form-control" name="description" rows="4">{{ product.description|default:'' }}</textarea>
+          {% if errors.description %}
+            <div class="text-warning">{{ errors.description }}</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="form-group row">
+        <label class="col-sm-2">Category:</label>
+        <div class="col-sm-10">
+          <select class="form-control selectpicker" name="category" data-live-search="true" data-size="4">
+            {% if not product.category %}<option selected>—</option>{% endif %}
+            {% for category in categories %}
+              <option value="{{ category.id }}"
+                      {% if product.category and category == product.category %}selected{% endif %}>
+                {{ category.name }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group row">
+        <label class="col-sm-2">Price:</label>
+        <div class="col-sm-10">
+          <input class="form-control" type="number" name="price" value="{{ product.price|default:'' }}">
+          {% if errors.price %}
+            <div class="text-warning">{{ errors.price }}</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <button class="btn btn-success" type="submit">Update</button>
+    </form>
+
+    <form method="get" action="{% url 'products' %}">
+      <button class="btn btn-info" type="submit">Back</button>
+    </form>
+
+    <!-- Delete Confirmation Button -->
+    <button class="btn btn-danger" data-toggle="modal" data-target="#deleteModal" data-id="{{ product.id }}">Delete</button>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="deleteModalLabel">Confirm Deletion</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            Are you sure you want to delete this product?
+          </div>
+          <div class="modal-footer">
+            <form method="post" action="{% url 'delete_product' product.id %}" id="deleteForm">
+              {% csrf_token %}
+              <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn btn-danger">Delete</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {% block fileinput %}
+    <link rel="stylesheet" href="{% static 'css/fileinput.css' %}">
+    <script src="{% static 'js/fileinput.js' %}"></script>
+
+    <script>
+      $(document).ready(function() {
+        $('#photo').fileinput({
+          browseClass: "btn btn-primary btn-block",
+          showRemove: false,
+          showClose: false,
+          showUpload: false,
+          maxFileSize: 5000,
+          allowedFileExtensions: ["jpg", "png"],
+          {% if product.photoUrl %}
+            initialPreview: ['{{ product.photoUrl }}'],
+            initialPreviewAsData: true,
+            initialPreviewConfig: [{type: "image", key: 1, showRemove: false}]
+          {% endif %}
+        });
+
+        $('#deleteModal').on('show.bs.modal', function (event) {
+          var button = $(event.relatedTarget) // Button that triggered the modal
+          var productId = button.data('id') // Extract info from data-* attributes
+          var form = $('#deleteForm')
+          var action = form.attr('action').replace('0', productId)
+          form.attr('action', action)
+        });
+      });
+    </script>
+    {% endblock %}
+
+  {% else %}
+    <div class="alert alert-danger" role="alert">
+      <h4 class="alert-heading">Error</h4>
+      <hr>This product does not exist!
+    </div>
+  {% endif %}
+{% endblock %}

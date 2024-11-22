@@ -1,0 +1,201 @@
+{% extends 'common/home.html' %}
+{% load static %}
+
+<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/kanban.css' %}">
+
+<h1 class="my-4">Orders Kanban</h1>
+
+<div class="kanban-filters mb-4 d-flex justify-content-end">
+    <input type="text" id="searchClient" placeholder="Search by Client Name" class="search-bar form-control mr-2" style="width: 200px;">
+    <select id="statusFilter" class="status-filter form-control mr-2" style="width: 150px;">
+        <option value="">All Statuses</option>
+        <option value="new">New</option>
+        <option value="in_process">In Process</option>
+        <option value="sent">Sent</option>
+        <option value="delivered">Delivered</option>
+    </select>
+    <button id="applyFilterButton" class="filter-button btn btn-primary">Apply Filters</button>
+</div>
+
+<div class="kanban-board">
+    <!-- New Orders Column -->
+    <div class="kanban-column">
+        <div class="kanban-column-header bg-primary">New</div>
+        <div id="new-orders" class="kanban-items" data-status="new">
+            {% for order in orders_by_status.new %}
+            <div class="kanban-item" data-id="{{ order.id }}" data-client="{{ order.client.name|lower }}" data-status="new">
+                <p><strong>Client:</strong> {{ order.client.name }}</p>
+                <p><strong>Amount:</strong> {{ order.amount }} $ <strong>Time:</strong> {{ order.created_date|date:"H:i" }}</p>
+                <div class="kanban-item-footer d-flex justify-content-between">
+                    <span><strong>ID:</strong> {{ order.id }}</span>
+                    <a href="{% url 'edit_order' order.id %}" class="edit-icon btn btn-outline-primary btn-sm">
+                        <i class="fa fa-pencil"></i> 
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- In Process Orders Column -->
+    <div class="kanban-column">
+        <div class="kanban-column-header bg-warning">In Process</div>
+        <div id="in-process-orders" class="kanban-items" data-status="in_process">
+            {% for order in orders_by_status.in_process %}
+            <div class="kanban-item" data-id="{{ order.id }}" data-client="{{ order.client.name|lower }}" data-status="in_process">
+                <p><strong>Client:</strong> {{ order.client.name }}</p>
+                <p><strong>Amount:</strong> {{ order.amount }} $ <strong>Time:</strong> {{ order.created_date|date:"H:i" }}</p>
+                <div class="kanban-item-footer d-flex justify-content-between">
+                    <span><strong>ID:</strong> {{ order.id }}</span>
+                    <a href="{% url 'edit_order' order.id %}" class="edit-icon btn btn-outline-primary btn-sm">
+                        <i class="fa fa-pencil"></i> 
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Sent Orders Column -->
+    <div class="kanban-column">
+        <div class="kanban-column-header bg-progress">Sent</div>
+        <div id="sent-orders" class="kanban-items" data-status="sent">
+            {% for order in orders_by_status.sent %}
+            <div class="kanban-item" data-id="{{ order.id }}" data-client="{{ order.client.name|lower }}" data-status="sent">
+                <p><strong>Client:</strong> {{ order.client.name }}</p>
+                <p><strong>Amount:</strong> {{ order.amount }} $ <strong>Time:</strong> {{ order.created_date|date:"H:i" }}</p>
+                <div class="kanban-item-footer d-flex justify-content-between">
+                    <span><strong>ID:</strong> {{ order.id }}</span>
+                    <a href="{% url 'edit_order' order.id %}" class="edit-icon btn btn-outline-primary btn-sm">
+                        <i class="fa fa-pencil"></i> 
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Delivered Orders Column -->
+    <div class="kanban-column">
+        <div class="kanban-column-header bg-success">Delivered</div>
+        <div id="delivered-orders" class="kanban-items" data-status="delivered">
+            {% for order in orders_by_status.delivered %}
+            <div class="kanban-item" data-id="{{ order.id }}" data-client="{{ order.client.name|lower }}" data-status="delivered">
+                <p><strong>Client:</strong> {{ order.client.name }}</p>
+                <p><strong>Amount:</strong> {{ order.amount }} $ <strong>Time:</strong> {{ order.created_date|date:"H:i" }}</p>
+                <div class="kanban-item-footer d-flex justify-content-between">
+                    <span><strong>ID:</strong> {{ order.id }}</span>
+                    <a href="{% url 'edit_order' order.id %}" class="edit-icon btn btn-outline-primary btn-sm">
+                        <i class="fa fa-pencil"></i> 
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Status Change Confirmation Modal -->
+<div class="modal fade" id="statusModal" tabindex="-1" role="dialog" aria-labelledby="statusModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="statusModalLabel">Confirm Status Change</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to change the status of this order?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmStatusChange">Change Status</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
+<script>
+    let orderIdToUpdate = null;
+    let newStatusToUpdate = null;
+    let originalColumn = null;
+
+    document.querySelectorAll('.kanban-items').forEach(function (column) {
+        new Sortable(column, {
+            group: 'orders',
+            animation: 150,
+            emptyInsertThreshold: 25,
+            onStart: function (evt) {
+                originalColumn = evt.from; 
+            },
+            onEnd: function (evt) {
+                orderIdToUpdate = evt.item.dataset.id;
+                newStatusToUpdate = evt.to.dataset.status;
+                $('#statusModal').modal('show');
+            }
+        });
+    });
+
+    document.getElementById('confirmStatusChange').addEventListener('click', async function () {
+        try {
+            const response = await fetch(`/orders/update_status/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({ id: orderIdToUpdate, status: newStatusToUpdate })
+            });
+
+            if (!response.ok) {
+                alert('Error updating order status.');
+                location.reload();
+            } else {
+                $('#statusModal').modal('hide');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Connection error.');
+            location.reload();
+        }
+    });
+
+    $('#statusModal .btn-secondary').on('click', function () {
+        if (originalColumn && orderIdToUpdate) {
+            const item = document.querySelector(`[data-id="${orderIdToUpdate}"]`);
+            originalColumn.appendChild(item); 
+        }
+        $('#statusModal').modal('hide'); 
+    });
+
+    $(document).ready(function() {
+        function applyFilters() {
+            var searchTerm = $('#searchClient').val().toLowerCase();
+            var selectedStatus = $('#statusFilter').val();
+
+            $('.kanban-item').each(function() {
+                var clientName = $(this).data('client') ? $(this).data('client').toLowerCase() : "";
+                var status = $(this).data('status');
+
+                var matchesSearch = clientName.includes(searchTerm);
+                var matchesStatus = (selectedStatus === '' || status === selectedStatus);
+
+                if (matchesSearch && matchesStatus) {
+                    $(this).show();
+                } else {
+                    $(this).hide();
+                }
+            });
+        }
+
+        $('#searchClient').on('keyup', applyFilters);
+        $('#statusFilter').on('change', applyFilters);
+    });
+</script>
+
+{% endblock %}
