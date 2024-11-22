@@ -1,3 +1,9 @@
 # Ignore __pycache__ directories
 __pycache__/
 **/__pycache__/
+.git
+__pycache__
+*.pyc
+*.pyo
+.vscode
+node_modules
