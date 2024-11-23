@@ -20,6 +20,17 @@ services:
     env_file:
       - .env
 
+  bot:
+    container_name: bot
+    build: .
+    command: python -m bot.bot
+    volumes:
+      - .:/bot
+    ports:
+      - "8080:8080"
+    environment:
+      - PYTHONUNBUFFERED=1
+
   jaeger-api:
     image: jaegertracing/opentelemetry-all-in-one
     container_name: jaeger-api
@@ -32,7 +43,7 @@ services:
     image: otel/opentelemetry-collector-contrib:0.91.0
     container_name: collector-api
     volumes:
-      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
+      - ./utils/otel-collector-config.yaml:/etc/otel-collector-config.yaml
     command: ['--config=/etc/otel-collector-config.yaml']
     ports:
       - 4317:4317
@@ -43,7 +54,7 @@ services:
     container_name: prometheus
     image: prom/prometheus
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./utils/prometheus.yml:/etc/prometheus/prometheus.yml
     command:
       - --config.file=/etc/prometheus/prometheus.yml
       - --enable-feature=exemplar-storage
@@ -58,7 +69,7 @@ services:
     container_name: grafana
     image: grafana/grafana
     volumes:
-      - ./grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
+      - ./utils/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
     restart: always
     ports:
       - '3000:3000'
@@ -101,7 +112,7 @@ services:
       SONAR_TOKEN: sqp_0cd3e64111cac5c4fb06bcdf6fc3845e12b8f713
     volumes:
       - .:/usr/src
-      - ./sonar-project.properties:/opt/sonar-scanner/conf/sonar-scanner.properties
+      - ./utils/sonar-project.properties:/opt/sonar-scanner/conf/sonar-scanner.properties
 
 volumes:
   mysql-data:

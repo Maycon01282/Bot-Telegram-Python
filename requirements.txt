@@ -17,3 +17,5 @@ coverage==7.2.7
 pytest==7.4.2
 pytest-django==4.5.2
 aiogram==3.0.0b7
+asyncpg==0.27.0
+aiomysql==0.1.1

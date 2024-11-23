@@ -63,6 +63,6 @@ if __name__ == '__main__':
     valor = '1.00'  # Valor de exemplo
     cidade = os.getenv("RECEIVER_CITY")
     txtId = os.getenv("TXID", "LOJA01")
-    diretorio = ''  # Diretório de exemplo
+    diretorio = 'utils/'  # Diretório de exemplo
 
     Payload(nome, chavepix, valor, cidade, txtId, diretorio).gerarPayload()
